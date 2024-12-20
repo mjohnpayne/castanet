@@ -154,7 +154,7 @@ def do_batch(payload, start_with_bam=False):
     if not start_with_bam:
         '''Standard end to end pipelines'''
         SeqNamesList = [enumerate_read_files(
-            folder, payload["BatchName"]) for folder in sorted(os.listdir(payload["BatchName"])) if not folder == "__pycache__"]
+            folder, payload["BatchName"]) for folder in sorted(os.listdir(payload["BatchName"])) if not folder == "__pycache__" and os.path.isdir(f"{payload['BatchName']}/{folder}")]
         SeqNamesList = [i for i in SeqNamesList if not i == []]
     else:
         '''BAM only pipelines'''

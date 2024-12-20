@@ -23,6 +23,8 @@ Described in Mayne, R., Secret., S., Geoghegan, C., et al. (2024) Castanet: a pi
 * Additional optional arguments added to Castanet lite (CLI)
 * Bug fixes:
     * Infile hashing now works as expected on amplicon pipeline
+    * Batch mode will now ignore non-directory items in a folder, rather than explictly calling an error
+    * Fixed issue where end of batch run summary files would fail to save, if input files and output directory were at different levels of directory nesting
     * Fixed issue where Kraken2 call wasn't working for some users who had pre-existing installations in their PATH
     * User guidance on running Castanet lite (CLI) fixed with correct path
 

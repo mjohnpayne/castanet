@@ -172,7 +172,7 @@ class Amplicon_data(Data_ExpDir, Data_NThreads, Data_ExpName):
     pass
 
 
-class Batch_eval_data(Data_AdaptP, Data_PostFilt, Data_AnalysisExtras, Data_KrakenDir,
+class Batch_eval_data(Data_AdaptP, Data_PostFilt, Data_AnalysisExtras, Data_KrakenDir, Data_MappingParameters,
                       Data_ConsensusParameters, Data_GenerateCounts, Data_FilterFilters, Data_TrimmomaticParams,
                       Data_RefStem, Data_NThreads, Data_ExpName, Data_BatchName):
     pass
