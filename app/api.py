@@ -1,7 +1,7 @@
 import os
 import re
 import time
-import pickle
+import logging
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
 
@@ -29,6 +29,9 @@ from app.utils.hash_files import check_infile_hashes
 from app.utils.api_classes import (Batch_eval_data, E2e_eval_data, E2e_data, Preprocess_data, Filter_keep_reads_data, Amp_e2e_data,
                                    Trim_data, Mapping_data, Count_map_data, Analysis_data, Dep_check_data, Amplicon_data,
                                    Post_filter_data, Consensus_data, Eval_data, Convert_probe_data, Bam_workflow_data)
+
+logger = logging.getLogger('uvicorn.error')
+logger.setLevel(logging.DEBUG)
 
 import_test()
 

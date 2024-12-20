@@ -51,6 +51,8 @@ def parse_arguments_lite():
                         help="If True, use Trimmomatic to remove adapters and low quality sequences.")
     parser.add_argument('-DoConsensus', required=False, default=True, type=str,
                         help="If True, run the Castanet consensus sequence pipeline stage.")
+    parser.add_argument('-Mapper', required=False,
+                        default="bwa", help="Pass API arg in via shell.")
     bool_fields = ["Batch", "BAM", "DoKrakenPrefilter",
                    "DoTrimming", "DoConsensus"]
     return parser, bool_fields

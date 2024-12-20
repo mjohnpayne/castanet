@@ -49,12 +49,14 @@ def run_map(p):
             shell(
                 f"bowtie2-build --large-index {p['RefStem']} {p['SaveDir']}/reference_indices")
         shell(f"bowtie2 -x {p['SaveDir']}/reference_indices -1 {in_files[0]} -2 {in_files[1]} -p {p['NThreads']} --local -I 50 --maxins 2000 --no-unal | samtools view -h -Sb -F4 -F2048 - | samtools sort - 1> {p['SaveDir']}/{p['ExpName']}/{p['ExpName']}.bam")
+        error_handler_cli(
+            out, f"{p['SaveDir']}/{p['ExpName']}/{p['ExpName']}.bam", "bowtie2", test_f_size=True)
 
     else:
-        logerr(
-            f"User option for mapping software ('Mapper' parameter) is not 'bwa' or 'bowtie2' (it's {p['Mapper']}), so I can't proceed")
+        stoperr(
+            f"User option for mapping software ('Mapper' parameter) is not 'bwa' or 'bowtie2' (you specified '{p['Mapper']}'), so I can't proceed")
 
     if CLEAN_UP:
         shell(
             f"rm {p['SaveDir']}/{p['ExpName']}/{p['ExpName']}_[12]_clean.fastq")
-    end_sec_print(f"INFO: BWA mapping complete")
+    end_sec_print(f"INFO: Mapping complete")

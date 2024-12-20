@@ -17,11 +17,14 @@ o       O o       O o       O O       O o
 </p>
 Described in Mayne, R., Secret., S., Geoghegan, C., et al. (2024) Castanet: a pipeline for rapid analysis of targeted multi-pathogen genomic data. Bioinformatics, btae591. https://doi.org/10.1093/bioinformatics/btae591
 
-# New features with Version 7
-* New expanded readme on our Wiki
-* Enhanced stand-alone CLI (see [Quick start](https://github.com/MultipathogenGenomics/castanet/wiki/Quickstart))
-* <a href="https://hub.docker.com/r/mayne941/castanet"><img src="docs/docker-mark-blue.png" alt="drawing" width="25" /> Try our new Docker container with DockerHub</a> (see [Advanced usage options](https://github.com/MultipathogenGenomics/castanet/wiki/Advanced) for guidance)
-* PyTest suite with 80% coverage
+# New features with Version 8
+* Added user option to map with bowtie2, in addition to BWA-mem2
+* Troubleshooting section added to Wiki
+* Additional optional arguments added to Castanet lite (CLI)
+* Bug fixes:
+    * Infile hashing now works as expected on amplicon pipeline
+    * Fixed issue where Kraken2 call wasn't working for some users who had pre-existing installations in their PATH
+    * User guidance on running Castanet lite (CLI) fixed with correct path
 
 # [Documentation](https://github.com/MultipathogenGenomics/castanet/wiki)
 Castanet documentation is hosted on our [GitHub Wiki Page](https://github.com/MultipathogenGenomics/castanet/wiki)
@@ -31,7 +34,7 @@ Castanet documentation is hosted on our [GitHub Wiki Page](https://github.com/Mu
 ## [Output file interpretation](https://github.com/MultipathogenGenomics/castanet/wiki/Output)
 ## [Advanced usage options](https://github.com/MultipathogenGenomics/castanet/wiki/Advanced)
 ## [Guide for contributors](https://github.com/MultipathogenGenomics/castanet/wiki/Contributors)
-
+## [Troubleshooting](https://github.com/MultipathogenGenomics/castanet/wiki/Troubleshooting)
 
 # Castanet workflow
 ![image](./docs/castanet_flowchart_final.drawio.png)
