@@ -46,8 +46,8 @@ def run_map(p):
         ref_dir = f"{p['SaveDir']}/reference_indices"
         if not os.path.exists(ref_dir):
             os.mkdir(ref_dir)
-            shell(
-                f"bowtie2-build --large-index {p['RefStem']} {p['SaveDir']}/reference_indices")
+        out = shell(
+            f"bowtie2-build --large-index {p['RefStem']} {p['SaveDir']}/reference_indices", is_test=True)
         shell(f"bowtie2 -x {p['SaveDir']}/reference_indices -1 {in_files[0]} -2 {in_files[1]} -p {p['NThreads']} --local -I 50 --maxins 2000 --no-unal | samtools view -h -Sb -F4 -F2048 - | samtools sort - 1> {p['SaveDir']}/{p['ExpName']}/{p['ExpName']}.bam")
         error_handler_cli(
             out, f"{p['SaveDir']}/{p['ExpName']}/{p['ExpName']}.bam", "bowtie2", test_f_size=True)

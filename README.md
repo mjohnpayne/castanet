@@ -45,6 +45,18 @@ Castanet documentation is hosted on our [GitHub Wiki Page](https://github.com/Mu
 Dotted lines indicate optional pipeline stages.
 
 # Changelog
+## Version 8, 20/12/24
+1. Added user option to map with bowtie2, in addition to BWA-mem2
+1. Troubleshooting section added to Wiki
+1. Additional optional arguments added to Castanet lite (CLI)
+1. Security and compatibility updates for modules: pydantic, fastapi, pandas, numpy
+1. Bug fixes:
+    * Infile hashing now works as expected on amplicon pipeline
+    * Batch mode will now ignore non-directory items in a folder, rather than explictly calling an error
+    * Fixed issue where end of batch run summary files would fail to save, if input files and output directory were at different levels of directory nesting
+    * Fixed issue where Kraken2 call wasn't working for some users who had pre-existing installations in their PATH
+    * User guidance on running Castanet lite (CLI) fixed with correct path
+
 ## Version 7, 19/08/24
 1. Docker support
 1. PyTest suite (80% cov)
