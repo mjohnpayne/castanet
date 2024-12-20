@@ -90,6 +90,11 @@ class Data_AnalysisExtras(BaseModel):
                                        description="(OPTIONAL) If specified, read raw read numbers from this CSV (needs cols 'sampleid', 'pt', 'rawreadnum'). If not specified, CASTANET will read the raw read numbers from the input bam file, i.e. it will assume you haven't pre-filtered the file.")
 
 
+class Data_MappingParameters(BaseModel):
+    Mapper: Literal["bwa", "bowtie2"] = Query("bwa",
+                                              description="Choose mapping software, options are 'bwa' for BWA-Mem2 or 'bowtie2'")
+
+
 class Data_ConsensusParameters(BaseModel):
     DoConsensus: bool = Query(True,
                               description="If true, run the Castanet consensus generator pipeline stage (default = True).")
@@ -110,21 +115,21 @@ class Data_ConsensusParameters(BaseModel):
 '''Endpoint objects'''
 
 
-class E2e_data(Data_NThreads, Data_AdaptP,
+class E2e_data(Data_NThreads, Data_AdaptP, Data_MappingParameters,
                Data_PostFilt, Data_AnalysisExtras, Data_KrakenDir,
                Data_ConsensusParameters, Data_FilterFilters, Data_TrimmomaticParams, Data_GenerateCounts,
                Data_RefStem, Data_ExpName, Data_ExpDir):
     pass
 
 
-class Amp_e2e_data(Data_NThreads, Data_AdaptP,
+class Amp_e2e_data(Data_NThreads, Data_AdaptP, Data_MappingParameters,
                    Data_KrakenDir, Data_FilterFilters,
                    Data_TrimmomaticParams, Data_GenerateCounts,
                    Data_RefStem, Data_ExpName, Data_ExpDir):
     pass
 
 
-class E2e_eval_data(Data_ExpDir, Data_ExpName, Data_NThreads, Data_AdaptP, Data_RefStem,
+class E2e_eval_data(Data_ExpDir, Data_ExpName, Data_NThreads, Data_AdaptP, Data_RefStem, Data_MappingParameters,
                     Data_PostFilt, Data_AnalysisExtras, Data_KrakenDir, Data_FilterFilters,
                     Data_ConsensusParameters, Data_TrimmomaticParams, Data_GenerateCounts):
     pass
@@ -147,7 +152,7 @@ class Trim_data(Data_ExpDir, Data_ExpName, Data_NThreads, Data_AdaptP, Data_Trim
     pass
 
 
-class Mapping_data(Data_ExpDir, Data_ExpName, Data_NThreads, Data_RefStem):
+class Mapping_data(Data_ExpDir, Data_ExpName, Data_MappingParameters, Data_NThreads, Data_RefStem):
     pass
 
 

@@ -15,7 +15,7 @@ o       O o       O o       O O       O o
 <p align="center">
 <img src="docs/output3b.jpg" alt="drawing" width="600"/>
 </p>
-Described in Mayne, R., Secret., S., Geoghegan, C., et al. (2024) Castanet: a pipeline for rapid analysis of targeted multi-pathogen genomic data (Preprint) https://doi.org/10.1101/2024.06.28.601013.
+Described in Mayne, R., Secret., S., Geoghegan, C., et al. (2024) Castanet: a pipeline for rapid analysis of targeted multi-pathogen genomic data. Bioinformatics, btae591. https://doi.org/10.1093/bioinformatics/btae591
 
 # New features with Version 7
 * New expanded readme on our Wiki

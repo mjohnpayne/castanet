@@ -276,6 +276,9 @@ class Consensus:
         shell(f"samtools fastq {self.a['folder_stem']}consensus_data/{org_name}/collated_reads.bam |"
               f"bwa-mem2 mem -t {self.a['NThreads']} {self.a['folder_stem']}consensus_data/{org_name}/{org_name}_consensus_sequence.fasta - | "
               f"viral_consensus -i - -r {self.a['folder_stem']}consensus_data/{org_name}/{org_name}_consensus_sequence.fasta -o {flat_cons_fname} --min_depth {self.a['ConsensusMinD']} --out_pos_counts {self.a['folder_stem']}consensus_data/{org_name}/{org_name}_consensus_pos_counts.tsv")
+        # Version for use with disabled consensus min D
+        #   f"viral_consensus -i - -r {self.a['folder_stem']}consensus_data/{org_name}/{org_name}_consensus_sequence.fasta -o {flat_cons_fname} --out_pos_counts {self.a['folder_stem']}consensus_data/{org_name}/{org_name}_consensus_pos_counts.tsv")
+
         error_handler_cli("", flat_cons_fname,
                           "viral_consensus", test_f_size=True)
         try:
