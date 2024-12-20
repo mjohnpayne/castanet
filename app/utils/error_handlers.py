@@ -161,10 +161,10 @@ def error_handler_cli(out, out_fname, tool, test_out_f=True, test_f_size=False):
     default_guidance = ""
     if "guidance" in cli_specific_errs.keys():
         default_guidance = cli_specific_errs["guidance"]
-    if "command not found" in out.lower() or "segmentation fault" in out.lower() or not cli_specific_errs["healthy_msg"] in out.lower():
+    if "command not found" in out.lower() or "segmentation fault" in out.lower() or not cli_specific_errs["healthy_msg"].lower() in out.lower():
         if out == "" and test_f_size:
-            # Don't fail here as it represents casting to an out file, which would have no response
-            ...  # RM <TODO tidy this messy logic
+            '''Don't fail here as it represents casting to an out file, which would have no response'''
+            ...
         else:
             stoperr(f"{tool} doesn't seem to be installed or threw an error not recognised by the Castanet test suite. Please check the Castanet readme for installation instructions. {default_guidance}"
                     f"{tool} output: {out}")
@@ -180,6 +180,8 @@ def error_handler_cli(out, out_fname, tool, test_out_f=True, test_f_size=False):
 
 def get_cli_tool_errors(cli_tool):
     err_objs = {
+        "bowtie2": {"healthy_msg": "Total time for backward call",
+                    "guidance": "bowtie2 produced an empty BAM file. Check your bowtie2 installation and that your input reads are of sufficent quality. This might also indicate an out of memory error, if you're crunching a huge dataset: if so, rerun the experiment with less cores (NThreads parameter)."},
         "kraken": {"healthy_msg": "loading database information",
                    "guidance": "Ensure it's installed and that you've got a Kraken2 database in the place Castanet expects it (via KrakenDbDir argument)."},
         "java": {"healthy_msg": "usage: java",

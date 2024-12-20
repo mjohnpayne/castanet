@@ -14,8 +14,8 @@ O       o O       o O       o O       o O
 | | O | | | | O | | | | O | | | | O | | |
 | o   O | | o   O | | o   O | | o   O | |
 o       O o       O o       O O       O o
-(c) @Tgolubch, https://doi.org/10.1101/716902
-    Py3 App & additions by @mayne941
+(c) Rich Mayne & Tanya Golubchik
+    https://doi.org/10.1093/bioinformatics/btae591
 """)
 
 

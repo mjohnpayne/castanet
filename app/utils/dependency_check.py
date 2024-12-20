@@ -42,6 +42,17 @@ class Dependencies:
         self.check_viral_cons(mappies)
         [os.remove(f) for f in mappies]
 
+    def check_mapping_bowtie(self):
+        loginfo("Testing bowtie2")
+        mappies = [f"{self.fol}{self.hash}.bam", f"{self.fol}{self.hash}.fasta",
+                   f"{self.fol}{self.hash}.aln", f"{self.fol}{self.hash}_cons.fasta"]
+        out = shell(
+            f"bowtie2-build data/eval/ref.fa {self.fol}/indices", is_test=True)
+        shell(
+            f"bowtie2 -x {self.fol}/indices -1 data/eval/sim_reads_1.fastq.gz -2 data/eval/sim_reads_2.fastq.gz -p {os.cpu_count()} --local -I 50 --maxins 2000 --no-unal | samtools view -F4 -Sb - | samtools sort - 1> {mappies[0]}")
+        error_handler_cli(out, mappies[0], "bowtie2", test_f_size=True)
+        # [os.remove(f) for f in mappies]
+
     def check_samtools(self, paths):
         loginfo("Testing Samtools")
         out = shell("samtools", is_test=True)
@@ -67,6 +78,7 @@ class Dependencies:
         self.check_kraken()
         self.check_trimmomatic()
         self.check_mapping()
+        self.check_mapping_bowtie()
         loginfo("All dependencies installed and functioning correctly.")
         shell(f"rmdir {self.fol}")
         return self.healthy_resp
