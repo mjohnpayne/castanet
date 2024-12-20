@@ -21,6 +21,7 @@ Described in Mayne, R., Secret., S., Geoghegan, C., et al. (2024) Castanet: a pi
 * Added user option to map with bowtie2, in addition to BWA-mem2
 * Troubleshooting section added to Wiki
 * Additional optional arguments added to Castanet lite (CLI)
+* Security and compatibility updates for modules: pydantic, fastapi, pandas, numpy
 * Bug fixes:
     * Infile hashing now works as expected on amplicon pipeline
     * Batch mode will now ignore non-directory items in a folder, rather than explictly calling an error
