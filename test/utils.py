@@ -26,6 +26,7 @@ def get_default_args():
         "ExpName": "test",
         "SaveDir": "./test",
         "RefStem": "data/eval/ref.fa",
+        "Mapper": "bwa",
         "SingleEndedReads": False,
         "MatchLength": 40,
         "DoTrimming": True,
