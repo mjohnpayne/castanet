@@ -98,12 +98,14 @@ class Data_MappingParameters(BaseModel):
 class Data_ConsensusParameters(BaseModel):
     DoConsensus: bool = Query(True,
                               description="If true, run the Castanet consensus generator pipeline stage (default = True).")
-    ConsensusMinD: int = Query(10,
-                               description="Minimum base depth required to make a call, for consensus calling functions (ignored if DoConsensus = false)")
+    ConsensusMinD: float = Query(10,
+                                 description="Minimum base depth required to make a call, for consensus calling functions (ignored if DoConsensus = false)")
     ConsensusCoverage: float = Query(30.0,
                                      description="Do not generate consensus if coverage < n. Applies to both target consensuses and final, remapped consensus (ignored if DoConsensus = false).")
     ConsensusMapQ: float = Query(1.0,
                                  description="Minimum quality value for a target consensus to be included in the remapped consensus (ignored if DoConsensus = false).")
+    ConsensusTrimTerminals: bool = Query(True,
+                                         description="Trim terminals of consensus sequence where both 3' and 5' end are ambiguous or gaps, AND constitute >5 percent of total genome length.")
     ConsensusCleanFiles: bool = Query(True,
                                       description="If True, consensus generator will delete BAM files for reads aggregated to each target organism. Disable to retain files for use in downstream analysis (ignored if DoConsensus = false).")
     GtFile: Optional[str] = Query('',
