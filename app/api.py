@@ -112,9 +112,10 @@ def process_payload(payload) -> dict:
             stoperr(
                 f"NThreads parameter should either be an integer, or 'auto' or 'hpc'.")
 
-    if "ConsensusMinD" in payload.keys():
-        if payload["ConsensusMinD"] <= 2:
-            stoperr(f"Consuensus min depth must exceed 2, otherwise you would inherit sections of reference sequence in the final remapped consensus.")
+    # Disable for manual consensus mode
+    # if "ConsensusMinD" in payload.keys():
+    #     if payload["ConsensusMinD"] <= 2:
+    #         stoperr(f"Consuensus min depth must exceed 2, otherwise you would inherit sections of reference sequence in the final remapped consensus.")
 
     write_input_params(payload)
     return payload

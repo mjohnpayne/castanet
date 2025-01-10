@@ -17,6 +17,12 @@ o       O o       O o       O O       O o
 </p>
 Described in Mayne, R., Secret., S., Geoghegan, C., et al. (2024) Castanet: a pipeline for rapid analysis of targeted multi-pathogen genomic data. Bioinformatics, btae591. https://doi.org/10.1093/bioinformatics/btae591
 
+# New features with Version 8.1
+* Bowtie2 support extended in Consensus module
+* Parameterised Consensus enable/disable terminal trim (ConsensusTrimTerminals)
+* Expanded range of output statistics for Consensus module
+* Test suite updated
+
 # New features with Version 8
 * Added user option to map with bowtie2, in addition to BWA-mem2
 * Troubleshooting section added to Wiki

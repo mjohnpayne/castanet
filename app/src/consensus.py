@@ -270,17 +270,30 @@ class Consensus:
     # @timing
     def remap_flat_consensus(self, org_name) -> None:
         '''Remap reads to flattened consensus, save, call stats, remove raw fastas'''
-        bwa_index(
-            f"{self.a['folder_stem']}consensus_data/{org_name}/{org_name}_consensus_sequence.fasta")
         flat_cons_fname = f"{self.a['folder_stem']}consensus_data/{org_name}/{org_name}_remapped_consensus_sequence.fasta"
-        shell(f"samtools fastq {self.a['folder_stem']}consensus_data/{org_name}/collated_reads.bam |"
-              f"bwa-mem2 mem -t {self.a['NThreads']} {self.a['folder_stem']}consensus_data/{org_name}/{org_name}_consensus_sequence.fasta - | "
-              f"viral_consensus -i - -r {self.a['folder_stem']}consensus_data/{org_name}/{org_name}_consensus_sequence.fasta -o {flat_cons_fname} --min_depth {self.a['ConsensusMinD']} --out_pos_counts {self.a['folder_stem']}consensus_data/{org_name}/{org_name}_consensus_pos_counts.tsv")
-        # Version for use with disabled consensus min D
-        #   f"viral_consensus -i - -r {self.a['folder_stem']}consensus_data/{org_name}/{org_name}_consensus_sequence.fasta -o {flat_cons_fname} --out_pos_counts {self.a['folder_stem']}consensus_data/{org_name}/{org_name}_consensus_pos_counts.tsv")
+
+        if self.a["Mapper"] == "bwa":
+            bwa_index(
+                f"{self.a['folder_stem']}consensus_data/{org_name}/{org_name}_consensus_sequence.fasta")
+            shell(f"samtools fastq {self.a['folder_stem']}consensus_data/{org_name}/collated_reads.bam |"
+                  f"bwa-mem2 mem -t {self.a['NThreads']} {self.a['folder_stem']}consensus_data/{org_name}/{org_name}_consensus_sequence.fasta - | "
+                  f"viral_consensus -i - -r {self.a['folder_stem']}consensus_data/{org_name}/{org_name}_consensus_sequence.fasta -o {flat_cons_fname} --min_depth {self.a['ConsensusMinD']} --out_pos_counts {self.a['folder_stem']}consensus_data/{org_name}/{org_name}_consensus_pos_counts.tsv")
+
+        elif self.a["Mapper"] == "bowtie2":
+            shell(
+                f"bowtie2-build {self.a['folder_stem']}consensus_data/{org_name}/{org_name}_consensus_sequence.fasta {self.a['folder_stem']}consensus_data/{org_name}/reference_indices", is_test=True)
+            shell(f"samtools fastq {self.a['folder_stem']}consensus_data/{org_name}/collated_reads.bam |"
+                  f"bowtie2 -x {self.a['folder_stem']}consensus_data/{org_name}/reference_indices -U - -p {self.a['NThreads']} --local -I 50 --maxins 2000 --no-unal |"
+                  f"viral_consensus -i - -r {self.a['folder_stem']}consensus_data/{org_name}/{org_name}_consensus_sequence.fasta -o {flat_cons_fname} --min_depth {self.a['ConsensusMinD']} --out_pos_counts {self.a['folder_stem']}consensus_data/{org_name}/{org_name}_consensus_pos_counts.tsv")
+
+            # Version for use with disabled consensus min D
+            # f"bowtie2 -x {self.a['folder_stem']}consensus_data/{org_name}/reference_indices -U - -p {self.a['NThreads']} --local -I 50 --maxins 2000 --no-unal |"
+            # f"viral_consensus -i - -r {self.a['folder_stem']}consensus_data/{org_name}/{org_name}_consensus_sequence.fasta -o {flat_cons_fname} -d 1 -f 0.05 --out_pos_counts {self.a['folder_stem']}consensus_data/{org_name}/{org_name}_consensus_pos_counts.tsv")
+            # if 1==2: breakpoint() # Stops accidentally committing
 
         error_handler_cli("", flat_cons_fname,
                           "viral_consensus", test_f_size=True)
+
         try:
             self.fix_terminal_gaps(f"{self.a['folder_stem']}consensus_data/{org_name}/{org_name}_consensus_pos_counts.tsv",
                                    f"{self.a['folder_stem']}consensus_data/{org_name}/{org_name}_remapped_consensus_sequence.fasta")
@@ -293,9 +306,12 @@ class Consensus:
         '''Trim terminal gaps'''
         cons = pd.read_csv(in_fname, sep="\t")
         n_pos = cons.shape[0]
-        '''If total reads at pos x < threshold AND in leading/trailing 5% of reads, mark for deletion'''
-        cons["del"] = cons.apply(lambda x: np.where(x["Total"] < 30 and (
-            x["Pos"] < n_pos * 0.05 or x["Pos"] > n_pos * 0.95), 1, 0), axis=1)
+        if self.a["ConsensusTrimTerminals"]:
+            '''If total reads at pos x < threshold AND in leading/trailing 5% of reads, mark for deletion'''
+            cons["del"] = cons.apply(lambda x: np.where(x["Total"] < 30 and (
+                x["Pos"] < n_pos * 0.05 or x["Pos"] > n_pos * 0.95), 1, 0), axis=1)
+        else:
+            cons["del"] = 0
         '''Rm terminal gaps, re-index, re-call consensus.'''
         cons = cons[cons["del"] == 0]
         cons = cons.drop(columns=["Pos", "Total", "del"])
@@ -340,11 +356,19 @@ class Consensus:
         else:
             df = pd.read_csv(dfpath)
 
-        # remapped cons stats
+        '''remapped cons stats'''
         c_df = pd.read_csv(
             f"{self.a['folder_stem']}/consensus_data/{org}/{org}_consensus_pos_counts.tsv")
-        gc = round((c_df["G"].sum() + c_df["C"].sum()) /
-                   c_df["Total"].sum() * 100, 2)
+        try:
+            gc = round((c_df["G"].sum() + c_df["C"].sum()) /
+                       c_df["Total"].sum() * 100, 2)
+        except:
+            # RM < TODO Messy, tidy me
+            c_df = pd.read_csv(
+                f"{self.a['folder_stem']}/consensus_data/{org}/{org}_consensus_pos_counts.tsv", sep="\t")
+            gc = round((c_df["G"].sum() + c_df["C"].sum()) /
+                       c_df["Total"].sum() * 100, 2)
+
         missing = c_df[c_df["Total"] == 0].shape[0]
         ambigs = c_df[(c_df["-"] != 0) & (c_df["A"] == 0) & (c_df["C"]
                                                              == 0) & (c_df["T"] == 0) & (c_df["G"] == 0)].shape[0]
