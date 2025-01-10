@@ -25,6 +25,7 @@ def defaults():
         "ConsensusMinD": 10,
         "ConsensusCoverage": 30,
         "ConsensusMapQ": 1,
+        "ConsensusTrimTerminals": True,
         "ConsensusCleanFiles": True,
         "GtFile": "",
         "GtOrg": "",

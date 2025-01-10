@@ -180,7 +180,7 @@ class Batch_eval_data(Data_AdaptP, Data_PostFilt, Data_AnalysisExtras, Data_Krak
     pass
 
 
-class Consensus_data(Data_ExpName, Data_NThreads, Data_RefStem, Data_ConsensusParameters):
+class Consensus_data(Data_ExpName, Data_NThreads, Data_RefStem, Data_ConsensusParameters, Data_MappingParameters):
     pass
 
 

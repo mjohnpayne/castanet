@@ -356,11 +356,19 @@ class Consensus:
         else:
             df = pd.read_csv(dfpath)
 
-        # remapped cons stats
+        '''remapped cons stats'''
         c_df = pd.read_csv(
-            f"{self.a['folder_stem']}/consensus_data/{org}/{org}_consensus_pos_counts.tsv", sep="\t")
-        gc = round((c_df["G"].sum() + c_df["C"].sum()) /
-                   c_df["Total"].sum() * 100, 2)
+            f"{self.a['folder_stem']}/consensus_data/{org}/{org}_consensus_pos_counts.tsv")
+        try:
+            gc = round((c_df["G"].sum() + c_df["C"].sum()) /
+                       c_df["Total"].sum() * 100, 2)
+        except:
+            # RM < TODO Messy, tidy me
+            c_df = pd.read_csv(
+                f"{self.a['folder_stem']}/consensus_data/{org}/{org}_consensus_pos_counts.tsv", sep="\t")
+            gc = round((c_df["G"].sum() + c_df["C"].sum()) /
+                       c_df["Total"].sum() * 100, 2)
+
         missing = c_df[c_df["Total"] == 0].shape[0]
         ambigs = c_df[(c_df["-"] != 0) & (c_df["A"] == 0) & (c_df["C"]
                                                              == 0) & (c_df["T"] == 0) & (c_df["G"] == 0)].shape[0]

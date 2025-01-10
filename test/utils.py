@@ -42,6 +42,7 @@ def get_default_args():
         "ConsensusCoverage": 30,
         "ConsensusMapQ": 1,
         "ConsensusCleanFiles": True,
+        "ConsensusTrimTerminals": True,
         "GtFile": "",
         "GtOrg": "",
         "KrakenDbDir": "kraken2_human_db/",
