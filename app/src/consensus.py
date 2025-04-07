@@ -390,7 +390,7 @@ class Consensus:
 
         '''Call CSV summary generator'''
         [self.generate_summary(i) for i in os.listdir(
-            f"{self.a['folder_stem']}/consensus_data/") if not "GROUND_TRUTH" in i and not ".fna" in i]
+            f"{self.a['folder_stem']}/consensus_data/") if not "GROUND_TRUTH" in i and not ".fna" in i and not i.startswith(".")]
 
         end_sec_print("INFO: Consensus calling complete")
 
