@@ -375,12 +375,13 @@ class Analysis:
         else:
             read_num = get_read_num(self.a, self.bam_fname)
             samples = pd.DataFrame(
-                [{"sampleid": self.a["ExpName"], "pt": "", "rawreadnum": read_num}])
+                [{"sampleid": str(self.a["ExpName"]), "pt": "", "rawreadnum": read_num}])
 
         if self.a["Clin"] != "":
             '''If supplied, merge clinical data'''
             samples = self.add_clin(samples)
-
+        depth['sampleid'] = depth['sampleid'].astype(str)
+        samples['sampleid'] = samples['sampleid'].astype(str)
         '''Merge read n (and clin data if supplied) to depth counts, return'''
         cdf = depth.merge(samples, on='sampleid', how='left')
         cdf['readprop'] = cdf.n_reads_all/cdf.rawreadnum
@@ -435,6 +436,7 @@ class Analysis:
         depth = self.add_depth(probelengths)
         '''Merge in sample info  (including total raw reads) and participant data if specified'''
         depth = self.add_read_d_and_clin(depth)
+        self.df["sampleid"] = self.df["sampleid"].astype(str)
         self.df = self.df.merge(
             depth, on=['sampleid', 'probetype'], how='left')
         self.df.to_csv(
