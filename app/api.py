@@ -99,7 +99,7 @@ def process_payload(payload) -> dict:
                 end_sec_print(
                     f"Setting AUTO NThreads to: {payload['NThreads']}")
             elif payload["NThreads"] == "hpc":
-                payload["NThreads"] == 1
+                payload["NThreads"] = 1
             else:
                 stoperr(
                     f"NThreads parameter should either be an integer, or 'auto' or 'hpc'.")
