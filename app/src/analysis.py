@@ -222,7 +222,8 @@ class Analysis:
                 '''Collapse to a single array for the entire genename group for this probetype in this sample'''
                 D = np.hstack(list(Dd.values()))
                 D1 = np.hstack(list(D1d.values()))
-                amprate = (D/D1)[~np.isnan(D/D1)]
+                valid_mask = (D1 != 0) & ~np.isnan(D) & ~np.isnan(D1)
+                amprate = (D[valid_mask] / D1[valid_mask])
                 '''Max possible positions for the genes that were actually in this BAM (accounts for some genes not being captured)'''
                 npos = len(D)
                 '''Now pad out with zeros to the total number of mappable positions for this probetype (nmax_probetype above)'''
