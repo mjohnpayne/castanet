@@ -106,7 +106,8 @@ class Analysis:
         probe_regexes = [
             re.compile(r'bact[0-9]+_([A-Za-z]+)-[0-9]+[-_]([A-Za-z]+)'),
             re.compile(r'bact[0-9]+_[0-9]+_([A-Za-z]+_[A-Za-z_]+)'),
-            re.compile(r'bact[0-9]+_([a-z]+_[a-z_]+)')
+            re.compile(r'bact[0-9]+_([a-z]+_[a-z_]+)'),
+            re.compile(r'bact[0-9]+_([A-Za-z]+)-[0-9]+')
         ]
 
         def _pat_search(s):
@@ -122,16 +123,18 @@ class Analysis:
                             s = f"{s.replace(pat, '')}"
 
                         res = (probe_regexes[2].findall(s),)
-
-                if not res:
+                        if not res[0]:
+                            res = (probe_regexes[3].findall(s),)
+                if not res[0]:
                     return ''
                 name = '_'.join(res[0])
 
                 if name[-1] == "_":
                     # Fix for old probe set with random trailing _'s
                     name = name[:-1]
-            except:
-                logerr(f"Castanet couldn't parse one or more of your probe names. Please ensure you've converted it to Castanet format with the /convert_mapping_reference/ endpoint and that input format was consistent with the format expected (see documentation).")
+
+            except Exception as e:
+                logerr(f"Castanet couldn't parse one or more of your probe names. Please ensure you've converted it to Castanet format with the /convert_mapping_reference/ endpoint and that input format was consistent with the format expected (see documentation).\n{s}\n{e}")
                 return s
             return name
 
