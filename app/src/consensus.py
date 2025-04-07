@@ -50,7 +50,7 @@ class Consensus:
         # TODO < Output test
 
         try:
-            out = out.decode().replace("\n", "").split("\t")[6:9]
+            out = out.decode().replace("\n", "\t").split("\t")[6:9]
         except Exception as ex:
             raise loginfo(
                 f"Could not generate a consensus for target: {tar_name}\nException: {ex}")
