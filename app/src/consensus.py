@@ -39,13 +39,13 @@ class Consensus:
         '''Filter bam to specific target, call consensus sequence for sam alignment records, grouped by target'''
         loginfo(f"Calling consensuses on all targets for: {tar_name}")
         group_bam_fname = f"{self.a['folder_stem']}grouped_reads/{tar_name}/{tar_name}.bam"
-        shell(f"samtools view -b {self.fnames['master_bam']} {tar_name} "
-              f"> {group_bam_fname}")
+        shell(f"samtools view -b {self.fnames['master_bam']} '{tar_name}' "
+              f"> '{group_bam_fname}'")
         # TODO < Test output
         match_str = f"(^|\s){tar_name}"
         if len(tar_name) < 99:
             match_str = f"{match_str}($|\s)"
-        out = shell(f"samtools coverage {group_bam_fname} | grep -E '{match_str}'",
+        out = shell(f"samtools coverage '{group_bam_fname}' | grep -E '{match_str}'",
                     "Coverage, consensus filter bam", ret_output=True)
         # TODO < Output test
 
@@ -63,12 +63,12 @@ class Consensus:
             loginfo(
                 f"Not adding subconsensus for {tar_name} to consensus for organism, as min D was {out[0]} and Map Q was {out[2]}")
             # TODO DISABLED FOR TEST
-            shell(f"rm -r {self.a['folder_stem']}grouped_reads/{tar_name}/")
+            shell(f"rm -r '{self.a['folder_stem']}grouped_reads/{tar_name}/'")
             return
         else:
             '''Else, call consensus on this target'''
             shell(
-                f"samtools consensus --call-fract 0.9 --min-depth {self.a['ConsensusMinD']} -f fasta {group_bam_fname} -o {self.a['folder_stem']}grouped_reads/{tar_name}/consensus_seqs_{tar_name}.fasta")
+                f"""samtools consensus --call-fract 0.9 --min-depth {self.a["ConsensusMinD"]} -f fasta '{group_bam_fname}' -o '{self.a['folder_stem']}grouped_reads/{tar_name}/consensus_seqs_{tar_name}.fasta'""")
 
     def collate_consensus_seqs(self, tar_name) -> None:
         '''Read and collate consensus seqs from per target to per organism'''
@@ -225,12 +225,15 @@ class Consensus:
             [i["tar_name"].replace(">", "") for i in self.target_consensuses[org_name] if i["tar_name"].startswith(">")]]
 
         '''Merge all bam files in grouped reads dir where they correspond to current target group'''
-        shell(f"""samtools merge {self.a['folder_stem']}consensus_data/{org_name}/collated_reads_unf.bam {' '.join([f'{self.a["folder_stem"]}grouped_reads/{i}/{i}.bam' for i in target_dirs])}""",
+        bamstr = ' '.join([f"""'{self.a["folder_stem"]}grouped_reads/{i}/{i}.bam'""" for i in target_dirs])
+        shell(f"""samtools merge {self.a['folder_stem']}consensus_data/{org_name}/collated_reads_unf.bam {bamstr}""",
               "Samtools merge, ref-adjusted consensus call (CONSENSUS.PY)")
         '''Output coverage stats for target consensuses'''
         try:
-            shell(f"samtools coverage {self.a['folder_stem']}consensus_data/{org_name}/collated_reads_unf.bam | "
-                  f"grep -E '{'|'.join(self.probe_names[self.probe_names['probetype'] == org_name]['orig_target_id'].tolist())}' > {self.a['folder_stem']}consensus_data/{org_name}/target_consensus_coverage.csv")
+            probels = self.probe_names[self.probe_names['probetype'] == org_name]['orig_target_id'].tolist()
+            probels = [i.replace("|", "\|") for i in probels]
+            cmd = f"samtools coverage {self.a['folder_stem']}consensus_data/{org_name}/collated_reads_unf.bam | grep -E '{'|'.join(probels)}' > {self.a['folder_stem']}consensus_data/{org_name}/target_consensus_coverage.csv"
+            shell(cmd)
         except OSError as e:
             stoperr(f"We couldn't call a consensus because your list of probes is too long. This is a kernel limitation. Can you reduce the size of your probe panel?")
 
@@ -249,8 +252,11 @@ class Consensus:
             '''Index unfiltered bam, then filter for targets with sufficient coverage'''
             samtools_index(
                 f"{self.a['folder_stem']}consensus_data/{org_name}/collated_reads_unf.bam")
-            shell(f"samtools view -b {self.a['folder_stem']}consensus_data/{org_name}/collated_reads_unf.bam {' '.join([f'{i}' for i in coverage_filter])} "
-                  f"> {self.a['folder_stem']}consensus_data/{org_name}/collated_reads.bam")
+
+            probels = [f'{i}' for i in coverage_filter]
+            probels = [i.replace("|", "\|") for i in probels]
+            cmd = f"samtools view -b {self.a['folder_stem']}consensus_data/{org_name}/collated_reads_unf.bam {' '.join(probels)} > {self.a['folder_stem']}consensus_data/{org_name}/collated_reads.bam"
+            shell(cmd)
 
             '''Estimate number of mapped reads in the final alignment (get just primary mapped reads, div 2 to average F & R strands)'''
             self.eval_stats[org_name]["filtered_collated_read_num"] = round(samtools_read_num(
