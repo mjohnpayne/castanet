@@ -3,6 +3,7 @@ import pandas as pd
 import subprocess as sp
 from collections import deque
 from termcolor import colored
+import platform
 
 from app.utils.shell_cmds import loginfo, stoperr, read_line
 
@@ -42,7 +43,10 @@ def error_handler_filter_keep_reads(argies):
                 argies["ExcludeNames"].split(','), exclude_list))
             if '' in taxa:
                 del taxa['']
-            cmd = 'zcat' if argies["LineageFile"].endswith('.gz') else 'cat'
+            if platform.system() == "Darwin":
+                cmd = 'gzcat' if argies["LineageFile"].endswith('.gz') else 'cat'
+            else:
+                cmd = 'zcat' if argies["LineageFile"].endswith('.gz') else 'cat'
             handle = sp.Popen(
                 (cmd, argies["LineageFile"]), bufsize=8192, stdout=sp.PIPE).stdout
             line = read_line(handle)
