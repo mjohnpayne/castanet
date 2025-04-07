@@ -90,15 +90,22 @@ class Data_AnalysisExtras(BaseModel):
                                        description="(OPTIONAL) If specified, read raw read numbers from this CSV (needs cols 'sampleid', 'pt', 'rawreadnum'). If not specified, CASTANET will read the raw read numbers from the input bam file, i.e. it will assume you haven't pre-filtered the file.")
 
 
+class Data_MappingParameters(BaseModel):
+    Mapper: Literal["bwa", "bowtie2"] = Query("bwa",
+                                              description="Choose mapping software, options are 'bwa' for BWA-Mem2 or 'bowtie2'")
+
+
 class Data_ConsensusParameters(BaseModel):
     DoConsensus: bool = Query(True,
                               description="If true, run the Castanet consensus generator pipeline stage (default = True).")
-    ConsensusMinD: int = Query(10,
-                               description="Minimum base depth required to make a call, for consensus calling functions (ignored if DoConsensus = false)")
+    ConsensusMinD: float = Query(10,
+                                 description="Minimum base depth required to make a call, for consensus calling functions (ignored if DoConsensus = false)")
     ConsensusCoverage: float = Query(30.0,
                                      description="Do not generate consensus if coverage < n. Applies to both target consensuses and final, remapped consensus (ignored if DoConsensus = false).")
     ConsensusMapQ: float = Query(1.0,
                                  description="Minimum quality value for a target consensus to be included in the remapped consensus (ignored if DoConsensus = false).")
+    ConsensusTrimTerminals: bool = Query(True,
+                                         description="Trim terminals of consensus sequence where both 3' and 5' end are ambiguous or gaps, AND constitute >5 percent of total genome length.")
     ConsensusCleanFiles: bool = Query(True,
                                       description="If True, consensus generator will delete BAM files for reads aggregated to each target organism. Disable to retain files for use in downstream analysis (ignored if DoConsensus = false).")
     GtFile: Optional[str] = Query('',
@@ -110,21 +117,21 @@ class Data_ConsensusParameters(BaseModel):
 '''Endpoint objects'''
 
 
-class E2e_data(Data_NThreads, Data_AdaptP,
+class E2e_data(Data_NThreads, Data_AdaptP, Data_MappingParameters,
                Data_PostFilt, Data_AnalysisExtras, Data_KrakenDir,
                Data_ConsensusParameters, Data_FilterFilters, Data_TrimmomaticParams, Data_GenerateCounts,
                Data_RefStem, Data_ExpName, Data_ExpDir):
     pass
 
 
-class Amp_e2e_data(Data_NThreads, Data_AdaptP,
+class Amp_e2e_data(Data_NThreads, Data_AdaptP, Data_MappingParameters,
                    Data_KrakenDir, Data_FilterFilters,
                    Data_TrimmomaticParams, Data_GenerateCounts,
                    Data_RefStem, Data_ExpName, Data_ExpDir):
     pass
 
 
-class E2e_eval_data(Data_ExpDir, Data_ExpName, Data_NThreads, Data_AdaptP, Data_RefStem,
+class E2e_eval_data(Data_ExpDir, Data_ExpName, Data_NThreads, Data_AdaptP, Data_RefStem, Data_MappingParameters,
                     Data_PostFilt, Data_AnalysisExtras, Data_KrakenDir, Data_FilterFilters,
                     Data_ConsensusParameters, Data_TrimmomaticParams, Data_GenerateCounts):
     pass
@@ -147,7 +154,7 @@ class Trim_data(Data_ExpDir, Data_ExpName, Data_NThreads, Data_AdaptP, Data_Trim
     pass
 
 
-class Mapping_data(Data_ExpDir, Data_ExpName, Data_NThreads, Data_RefStem):
+class Mapping_data(Data_ExpDir, Data_ExpName, Data_MappingParameters, Data_NThreads, Data_RefStem):
     pass
 
 
@@ -167,13 +174,13 @@ class Amplicon_data(Data_ExpDir, Data_NThreads, Data_ExpName):
     pass
 
 
-class Batch_eval_data(Data_AdaptP, Data_PostFilt, Data_AnalysisExtras, Data_KrakenDir,
+class Batch_eval_data(Data_AdaptP, Data_PostFilt, Data_AnalysisExtras, Data_KrakenDir, Data_MappingParameters,
                       Data_ConsensusParameters, Data_GenerateCounts, Data_FilterFilters, Data_TrimmomaticParams,
                       Data_RefStem, Data_NThreads, Data_ExpName, Data_BatchName):
     pass
 
 
-class Consensus_data(Data_ExpName, Data_NThreads, Data_RefStem, Data_ConsensusParameters):
+class Consensus_data(Data_ExpName, Data_NThreads, Data_RefStem, Data_ConsensusParameters, Data_MappingParameters):
     pass
 
 

@@ -19,8 +19,9 @@ tar -xzvf kraken2_human_db/kraken2_human_db.tar.gz
 # Download trimmomatic and extract
 conda install -y trimmomatic=0.39
 
-# Install BWA
+# Install mappers
 conda install -y bwa-mem2=2.2.1
+conda install -y bowtie2=2.5.4
 
 # Install viral consensus tool
 conda install -y viral_consensus=0.0.5

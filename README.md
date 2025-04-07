@@ -15,13 +15,25 @@ o       O o       O o       O O       O o
 <p align="center">
 <img src="docs/output3b.jpg" alt="drawing" width="600"/>
 </p>
-Described in Mayne, R., Secret., S., Geoghegan, C., et al. (2024) Castanet: a pipeline for rapid analysis of targeted multi-pathogen genomic data (Preprint) https://doi.org/10.1101/2024.06.28.601013.
+Described in Mayne, R., Secret., S., Geoghegan, C., et al. (2024) Castanet: a pipeline for rapid analysis of targeted multi-pathogen genomic data. Bioinformatics, btae591. https://doi.org/10.1093/bioinformatics/btae591
 
-# New features with Version 7
-* New expanded readme on our Wiki
-* Enhanced stand-alone CLI (see [Quick start](https://github.com/MultipathogenGenomics/castanet/wiki/Quickstart))
-* <a href="https://hub.docker.com/r/mayne941/castanet"><img src="docs/docker-mark-blue.png" alt="drawing" width="25" /> Try our new Docker container with DockerHub</a> (see [Advanced usage options](https://github.com/MultipathogenGenomics/castanet/wiki/Advanced) for guidance)
-* PyTest suite with 80% coverage
+# New features with Version 8.1
+* Bowtie2 support extended in Consensus module
+* Parameterised Consensus enable/disable terminal trim (ConsensusTrimTerminals)
+* Expanded range of output statistics for Consensus module
+* Test suite updated
+
+# New features with Version 8
+* Added user option to map with bowtie2, in addition to BWA-mem2
+* Troubleshooting section added to Wiki
+* Additional optional arguments added to Castanet lite (CLI)
+* Security and compatibility updates for modules: pydantic, fastapi, pandas, numpy
+* Bug fixes:
+    * Infile hashing now works as expected on amplicon pipeline
+    * Batch mode will now ignore non-directory items in a folder, rather than explictly calling an error
+    * Fixed issue where end of batch run summary files would fail to save, if input files and output directory were at different levels of directory nesting
+    * Fixed issue where Kraken2 call wasn't working for some users who had pre-existing installations in their PATH
+    * User guidance on running Castanet lite (CLI) fixed with correct path
 
 # [Documentation](https://github.com/MultipathogenGenomics/castanet/wiki)
 Castanet documentation is hosted on our [GitHub Wiki Page](https://github.com/MultipathogenGenomics/castanet/wiki)
@@ -31,7 +43,7 @@ Castanet documentation is hosted on our [GitHub Wiki Page](https://github.com/Mu
 ## [Output file interpretation](https://github.com/MultipathogenGenomics/castanet/wiki/Output)
 ## [Advanced usage options](https://github.com/MultipathogenGenomics/castanet/wiki/Advanced)
 ## [Guide for contributors](https://github.com/MultipathogenGenomics/castanet/wiki/Contributors)
-
+## [Troubleshooting](https://github.com/MultipathogenGenomics/castanet/wiki/Troubleshooting)
 
 # Castanet workflow
 ![image](./docs/castanet_flowchart_final.drawio.png)
@@ -39,6 +51,18 @@ Castanet documentation is hosted on our [GitHub Wiki Page](https://github.com/Mu
 Dotted lines indicate optional pipeline stages.
 
 # Changelog
+## Version 8, 20/12/24
+1. Added user option to map with bowtie2, in addition to BWA-mem2
+1. Troubleshooting section added to Wiki
+1. Additional optional arguments added to Castanet lite (CLI)
+1. Security and compatibility updates for modules: pydantic, fastapi, pandas, numpy
+1. Bug fixes:
+    * Infile hashing now works as expected on amplicon pipeline
+    * Batch mode will now ignore non-directory items in a folder, rather than explictly calling an error
+    * Fixed issue where end of batch run summary files would fail to save, if input files and output directory were at different levels of directory nesting
+    * Fixed issue where Kraken2 call wasn't working for some users who had pre-existing installations in their PATH
+    * User guidance on running Castanet lite (CLI) fixed with correct path
+
 ## Version 7, 19/08/24
 1. Docker support
 1. PyTest suite (80% cov)

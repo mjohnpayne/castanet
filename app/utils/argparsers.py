@@ -50,13 +50,13 @@ def parse_arguments_lite():
     parser.add_argument('-DoTrimming', required=False, default=True, type=str,
                         help="If True, use Trimmomatic to remove adapters and low quality sequences.")
     parser.add_argument('-DoConsensus', required=False, default=True, type=str,
-                        help="If True, run the Castanet consensus sequence pipeline stxage.")
+                        help="If True, run the Castanet consensus sequence pipeline stage.")
+    parser.add_argument('-Mapper', required=False,
+                        default="bwa", help="Pass API arg in via shell.")
     parser.add_argument('-NThreads', required=False, default=1, type=int,help="Number of threads to use for Castanet analysis.")
     parser.add_argument('-LineageFile', required=False, default="data/ncbi_lineages_2023-06-15.csv.gz", type=str,
                         help="path to the ncbi_lineages_2023-06-15.csv.gz file (in the castanet repo)")
     parser.add_argument('-AdaptP', required=False, default="data/all_adapters.fa", type=str)
-
-
     bool_fields = ["Batch", "BAM", "DoKrakenPrefilter",
                    "DoTrimming", "DoConsensus"]
     return parser, bool_fields
