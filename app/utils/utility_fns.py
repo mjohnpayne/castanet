@@ -84,7 +84,7 @@ def enumerate_read_files(exp_dir, single_ended_reads, batch_name=None):
     else:
         raise stoperr(
             f"I didn't find exactly 2 .fq/.fastq[.gz] read files in folder (ExpDir), so I'm skipping it: {exp_dir}.\n"
-            f"If you're using single ended reads (e.g. Nanopore), set the 'SingleEndedReads' parameter to 'true', and try again.")
+            f"If you're using single ended reads (e.g. Nanopore), set the 'SingleEndedReads' parameter to 'true', and try again (see documentation for guidance).")
 
 
 def enumerate_bam_files(exp_dir):
