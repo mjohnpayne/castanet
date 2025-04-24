@@ -16,14 +16,20 @@ def run_trim(p):
     }
     if not os.path.exists(files['in_files'][0]):
         '''If default filtered files not available, find input fastqs'''
-        files['in_files'] = enumerate_read_files(p["ExpDir"])
+        files['in_files'] = enumerate_read_files(p["ExpDir"], p["SingleEndedReads"])
         CLEAN_UP = False
 
     if p["DoTrimming"]:
         end_sec_print("INFO: Read Trimming beginning.")
-        out = shell(f"trimmomatic PE -threads {p['NThreads']} {files['in_files'][0]} {files['in_files'][1]} {files['clean_files'][0]} {files['trim_files'][0]} {files['clean_files'][1]} {files['trim_files'][1]} ILLUMINACLIP:{p['AdaptP']}:2:10:7:1:true MINLEN:{p['TrimMinLen']}", is_test=True)
+        if p["SingleEndedReads"]:
+            out = shell(f"trimmomatic SE -phred64 -threads {p['NThreads']} {files['in_files'][0]} {files['clean_files'][0]} ILLUMINACLIP:{p['AdaptP']}:2:10:7:1:true MINLEN:{p['TrimMinLen']}", is_test=True)
+            mode = "trimmomatic_se"
+        else:
+            out = shell(f"trimmomatic PE -threads {p['NThreads']} {files['in_files'][0]} {files['in_files'][1]} {files['clean_files'][0]} {files['trim_files'][0]} {files['clean_files'][1]} {files['trim_files'][1]} ILLUMINACLIP:{p['AdaptP']}:2:10:7:1:true MINLEN:{p['TrimMinLen']}", is_test=True)
+            mode = "trimmomatic_pe"
+
         error_handler_cli(out, files['clean_files']
-                          [0], "trimmomatic", test_f_size=True)
+                          [0], mode, test_f_size=True)
 
         if CLEAN_UP:
             for idx, fi in enumerate(files['in_files']):

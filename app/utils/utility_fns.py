@@ -55,26 +55,6 @@ def save_fa(fpath, pat):
         f.write(pat)
 
 
-# def get_reference_org(gt_file, seq_name, folder_stem):
-#     '''RM < TO DEPRECATE, OLD EVAL FN'''
-#     gt_table = pd.read_csv(gt_file)
-#     try:
-#         acc_id = gt_table[gt_table["Primary_accession"] ==
-#                           seq_name]["GenBank_accession"].item()
-#     except Exception as ex:
-#         raise ValueError(
-#             f"I couldn't extract reference organism data from the ground truth table. Check your SeqName ({seq_name}) matches your Ground Truth CSV file names.\nException: {ex}")
-
-#     if type(acc_id) != str:
-#         print(f"WARNING: Reference has no ground truth genome sequence!")
-#         return [f">NO REFERENCE AVAILABLE", "AAAAA"]
-
-#     ref_gb = DownloadGenBankFile(
-#         f"{folder_stem}consensus_data/GROUND_TRUTH_{seq_name}.gb", acc_id, "test@test.com")
-
-#     return [f">{acc_id}", str(ref_gb[acc_id].seq)]
-
-
 def trim_long_fpaths(key, max_len=100):
     '''Curtail very long probe names that can't be used as folder names'''
     if len(key) > max_len:
@@ -83,7 +63,7 @@ def trim_long_fpaths(key, max_len=100):
         return key
 
 
-def enumerate_read_files(exp_dir, batch_name=None):
+def enumerate_read_files(exp_dir, single_ended_reads, batch_name=None):
     if not exp_dir[-1] == "/":
         exp_dir = f"{exp_dir}/"
     accepted_formats = [".fq", ".fastq", ".gz"]
@@ -99,9 +79,12 @@ def enumerate_read_files(exp_dir, batch_name=None):
             f"The directory you specified to look for files doesn't exist, check your ExpDir and re-run.")
     if len(f_full) == 2:
         return f_full
+    elif len(f_full) == 1 and single_ended_reads:
+        return f_full
     else:
         raise stoperr(
-            f"I didn't find exactly 2 .fq/.fastq[.gz] read files in folder (ExpDir), so I'm skipping it: {exp_dir}")
+            f"I didn't find exactly 2 .fq/.fastq[.gz] read files in folder (ExpDir), so I'm skipping it: {exp_dir}.\n"
+            f"If you're using single ended reads (e.g. Nanopore), set the 'SingleEndedReads' parameter to 'true', and try again.")
 
 
 def enumerate_bam_files(exp_dir):

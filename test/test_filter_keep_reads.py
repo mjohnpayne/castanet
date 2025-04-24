@@ -13,30 +13,31 @@ def run_prefilter(prefilter):
     '''Initialise default args and directories'''
     p = get_default_args()
     p["DoKrakenPrefilter"], fstem = prefilter, f'{p["SaveDir"]}/{p["ExpName"]}'
-    if os.path.exists(fstem):
+    for single_ended in [False, True]:
+        if os.path.exists(fstem):
+            shutil.rmtree(fstem)
+        os.mkdir(fstem)
+        '''If doing prefilter, call Kraken'''
+        if prefilter:
+            run_kraken(p)
+        '''Call filter keep reads'''
+        clf = FilterKeepReads(p)
+        clf.main()
+        out_fs = enumerate_read_files(fstem, single_ended)
+        '''Check out files created with size > 2b'''
+        for out_f in out_fs:
+            assert os.stat(out_f).st_size > 2
+        n_reads_orig = int(shell(
+            f"samtools view -c {enumerate_read_files(p['ExpDir'], single_ended)[0]}", ret_output=True).decode())
+        n_reads_filt = int(shell(
+            f'samtools view -c {p["SaveDir"]}/{p["ExpName"]}/{p["ExpName"]}_{1}_filt.fastq', ret_output=True).decode())
+        '''Check outfile n reads is expected: n if no prefilter, n - 1 if prefilter'''
+        if prefilter:
+            expected = n_reads_orig - 1
+        else:
+            expected = n_reads_orig
+        assert n_reads_filt == expected
         shutil.rmtree(fstem)
-    os.mkdir(fstem)
-    '''If doing prefilter, call Kraken'''
-    if prefilter:
-        run_kraken(p)
-    '''Call filter keep reads'''
-    clf = FilterKeepReads(p)
-    clf.main()
-    out_fs = enumerate_read_files(fstem)
-    '''Check out files created with size > 2b'''
-    for out_f in out_fs:
-        assert os.stat(out_f).st_size > 2
-    n_reads_orig = int(shell(
-        f"samtools view -c {enumerate_read_files(p['ExpDir'])[0]}", ret_output=True).decode())
-    n_reads_filt = int(shell(
-        f'samtools view -c {p["SaveDir"]}/{p["ExpName"]}/{p["ExpName"]}_{1}_filt.fastq', ret_output=True).decode())
-    '''Check outfile n reads is expected: n if no prefilter, n - 1 if prefilter'''
-    if prefilter:
-        expected = n_reads_orig - 1
-    else:
-        expected = n_reads_orig
-    assert n_reads_filt == expected
-    shutil.rmtree(fstem)
 
 
 def test_filter_keep_reads_badinput():

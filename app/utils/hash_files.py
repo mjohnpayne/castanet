@@ -19,7 +19,7 @@ def hash_me(fname):
 
 def check_infile_hashes(payload, exp_dir):
     '''If an ExpDir already exists, check if hashes exist and gate if input data changed.'''
-    payload["SeqNames"] = enumerate_read_files(payload["ExpDir"])
+    payload["SeqNames"] = enumerate_read_files(payload["ExpDir"], payload["SingleEndedReads"])
     existing_hashes = {}
     if os.path.exists(exp_dir):
         try:

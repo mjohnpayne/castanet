@@ -26,3 +26,4 @@ def test_rm_existing_kraken():
     rm_existing_kraken(p)
     assert not os.path.exists("test/experiments/test/kraken.kraken") or not os.path.exists(
         "test/experiments/test/kraken_report.tsv")
+
