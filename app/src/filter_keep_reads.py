@@ -18,7 +18,7 @@ class FilterKeepReads:
     def __init__(self, argies) -> None:
         '''Convert API arguments to format of argparser'''
         self.a = argies
-        self.a["input_file"] = enumerate_read_files(argies["ExpDir"])
+        self.a["input_file"] = enumerate_read_files(argies["ExpDir"], argies["SingleEndedReads"])
         self.a["kraken"] = f"{argies['SaveDir']}/{argies['ExpName']}/{argies['ExpName']}.kraken"
         '''Run error handler, build output fnames, extend retain/exclude IDs from names'''
         if self.a["DoKrakenPrefilter"]:

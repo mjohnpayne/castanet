@@ -18,10 +18,13 @@ def run_kraken(p):
     out_fnames = [f'{p["SaveDir"]}/{p["ExpName"]}/{p["ExpName"]}.kraken',
                   f'{p["SaveDir"]}/{p["ExpName"]}/kraken_report.tsv']
     rm_existing_kraken(out_fnames)
+    paired = ""
+    if len(p["SeqNames"]) == 2:
+        paired = "--paired"
 
     try:
         out = shell(
-            f'kraken2 --db {p["KrakenDbDir"]} --paired --threads {p["NThreads"]} --output {out_fnames[0]} --report {out_fnames[1]} {p["SeqNames"][0]} {p["SeqNames"][1]}', is_test=True)
+            f'kraken2 --db {p["KrakenDbDir"]} {paired} --threads {p["NThreads"]} --output {out_fnames[0]} --report {out_fnames[1]} {" ".join(p["SeqNames"])}', is_test=True)
     except IndexError:
         stoperr(f"Two input read files were not found in the direcotry you specified")
     '''Test for success'''

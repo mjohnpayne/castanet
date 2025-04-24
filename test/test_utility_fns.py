@@ -55,18 +55,19 @@ def test_trim_long_fpaths():
 def test_enumerate_read_files():
     '''Correct usage scenario'''
     fstem = make_rand_dir()
+    single_ended = False
     correct_f_structure = [
         f"{fstem}/read_1.fastq.gz", f"{fstem}/read_2.fastq.gz"]
     for f in correct_f_structure:
         create_test_file(f)
-    fs = enumerate_read_files(fstem)
+    fs = enumerate_read_files(fstem, single_ended)
     assert len(fs) == 2
     shutil.rmtree(fstem)
 
     '''Non-existing folder'''
     nonexistant_fstem = get_random_str()
     with pytest.raises(SystemError):
-        enumerate_read_files(nonexistant_fstem)
+        enumerate_read_files(nonexistant_fstem, single_ended)
 
     '''Extra files ending in fq in directory'''
     fstem = make_rand_dir()
@@ -75,13 +76,13 @@ def test_enumerate_read_files():
     for f in incorrect_f_structure:
         create_test_file(f)
     with pytest.raises(SystemError):
-        fs = enumerate_read_files(fstem)
+        fs = enumerate_read_files(fstem, single_ended)
     os.remove(incorrect_f_structure[2])
 
     '''Extra files not of fq type in directory'''
     non_fa_file = incorrect_f_structure[0].replace(".fastq.gz", ".foo")
     create_test_file(non_fa_file)
-    fs = enumerate_read_files(fstem)
+    fs = enumerate_read_files(fstem, single_ended)
     assert len(fs) == 2
     shutil.rmtree(fstem)
 
