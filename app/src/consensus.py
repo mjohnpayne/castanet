@@ -410,7 +410,7 @@ class Consensus:
 
         '''Consensus for each thing target group'''
         [self.collate_consensus_seqs(tar_name) for tar_name in os.listdir(
-            f"{self.a['folder_stem']}/grouped_reads/")]
+            f"{self.a['folder_stem']}/grouped_reads/") if "BACT" not in tar_name]
         [self.call_flat_consensus(
             i) for i in self.target_consensuses.keys() if i != "Unmatched"]
         self.clean_incomplete_consensus()
