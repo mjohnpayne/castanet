@@ -160,13 +160,13 @@ class Consensus:
         if len(ref_aln) > 1:
             '''Align flat consensus references'''
             out = shell(
-                f"mafft --thread {os.cpu_count()} --auto {self.fnames['flat_cons_refs']} > {ref_aln_fname}", is_test=True)
+                f"mafft --thread {self.a['NThreads']} --auto {self.fnames['flat_cons_refs']} > {ref_aln_fname}", is_test=True)
             error_handler_cli(out, ref_aln_fname, "mafft")
         else:
             '''If only 1 reference seq, the alignment wouldn't have worked - defer to temp refs file in these cases'''
             ref_aln_fname = self.fnames['flat_cons_refs']
         ref_aln_with_reads_fname = f"{self.a['folder_stem']}consensus_data/{org_name}/{org_name}_consensus_alignment.aln"
-        out = shell(f"mafft --thread {os.cpu_count()} --auto --addfragments {self.fnames['flat_cons_seqs']} {ref_aln_fname}"
+        out = shell(f"mafft --thread {self.a['NThreads']} --auto --addfragments {self.fnames['flat_cons_seqs']} {ref_aln_fname}"
                     f"> {ref_aln_with_reads_fname}", is_test=True)
         error_handler_cli(out, ref_aln_with_reads_fname,
                           "mafft", test_f_size=True)
@@ -225,12 +225,14 @@ class Consensus:
             [i["tar_name"].replace(">", "") for i in self.target_consensuses[org_name] if i["tar_name"].startswith(">")]]
 
         '''Merge all bam files in grouped reads dir where they correspond to current target group'''
-        bamstr = ' '.join([f"""'{self.a["folder_stem"]}grouped_reads/{i}/{i}.bam'""" for i in target_dirs])
+        bamstr = ' '.join(
+            [f"""'{self.a["folder_stem"]}grouped_reads/{i}/{i}.bam'""" for i in target_dirs])
         shell(f"""samtools merge {self.a['folder_stem']}consensus_data/{org_name}/collated_reads_unf.bam {bamstr}""",
               "Samtools merge, ref-adjusted consensus call (CONSENSUS.PY)")
         '''Output coverage stats for target consensuses'''
         try:
-            probels = self.probe_names[self.probe_names['probetype'] == org_name]['orig_target_id'].tolist()
+            probels = self.probe_names[self.probe_names['probetype']
+                                       == org_name]['orig_target_id'].tolist()
             probels = [i.replace("|", "\|") for i in probels]
             cmd = f"samtools coverage {self.a['folder_stem']}consensus_data/{org_name}/collated_reads_unf.bam | grep -E '{'|'.join(probels)}' > {self.a['folder_stem']}consensus_data/{org_name}/target_consensus_coverage.csv"
             shell(cmd)
@@ -409,7 +411,8 @@ class Consensus:
         '''Consensus for each thing target group'''
         [self.collate_consensus_seqs(tar_name) for tar_name in os.listdir(
             f"{self.a['folder_stem']}/grouped_reads/")]
-        [self.call_flat_consensus(i) for i in self.target_consensuses.keys() if i != "Unmatched"]
+        [self.call_flat_consensus(
+            i) for i in self.target_consensuses.keys() if i != "Unmatched"]
         self.clean_incomplete_consensus()
 
         '''Tidy up'''
