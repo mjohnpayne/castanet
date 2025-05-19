@@ -94,7 +94,7 @@ class Parse_bam_positions:
                 continue
 
             short_key = trim_long_fpaths(key)
-            make_dir(f"mkdir {grp_aln_f}{short_key}")
+            make_dir(f'mkdir "{grp_aln_f}{short_key}"')
             with open(f"{grp_aln_f}{short_key}/{short_key}.lst", "w") as file:
                 [file.write(f"{self.reads_by_hit[key][i][0]}\n")
                     for i in range(len(self.reads_by_hit[key]))]
