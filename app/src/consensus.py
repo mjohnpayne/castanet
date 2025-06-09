@@ -285,14 +285,14 @@ class Consensus:
                 f"{self.a['folder_stem']}consensus_data/{org_name}/{org_name}_consensus_sequence.fasta")
             shell(f"samtools fastq {self.a['folder_stem']}consensus_data/{org_name}/collated_reads.bam |"
                   f"bwa-mem2 mem -t {self.a['NThreads']} {self.a['folder_stem']}consensus_data/{org_name}/{org_name}_consensus_sequence.fasta - | "
-                  f"viral_consensus -i - -r {self.a['folder_stem']}consensus_data/{org_name}/{org_name}_consensus_sequence.fasta -o {flat_cons_fname} --min_depth {self.a['ConsensusMinD']} --out_pos_counts {self.a['folder_stem']}consensus_data/{org_name}/{org_name}_consensus_pos_counts.tsv")
+                  f"viral_consensus -i - -r {self.a['folder_stem']}consensus_data/{org_name}/{org_name}_consensus_sequence.fasta -o {flat_cons_fname} --min_depth {self.a['ConsensusMinD']} --out_pos_counts {self.a['folder_stem']}consensus_data/{org_name}/{org_name}_consensus_pos_counts.csv")
 
         elif self.a["Mapper"] == "bowtie2":
             shell(
                 f"bowtie2-build {self.a['folder_stem']}consensus_data/{org_name}/{org_name}_consensus_sequence.fasta {self.a['folder_stem']}consensus_data/{org_name}/reference_indices", is_test=True)
             shell(f"samtools fastq {self.a['folder_stem']}consensus_data/{org_name}/collated_reads.bam |"
                   f"bowtie2 -x {self.a['folder_stem']}consensus_data/{org_name}/reference_indices -U - -p {self.a['NThreads']} --local -I 50 --maxins 2000 --no-unal |"
-                  f"viral_consensus -i - -r {self.a['folder_stem']}consensus_data/{org_name}/{org_name}_consensus_sequence.fasta -o {flat_cons_fname} --min_depth {self.a['ConsensusMinD']} --out_pos_counts {self.a['folder_stem']}consensus_data/{org_name}/{org_name}_consensus_pos_counts.tsv")
+                  f"viral_consensus -i - -r {self.a['folder_stem']}consensus_data/{org_name}/{org_name}_consensus_sequence.fasta -o {flat_cons_fname} --min_depth {self.a['ConsensusMinD']} --out_pos_counts {self.a['folder_stem']}consensus_data/{org_name}/{org_name}_consensus_pos_counts.csv")
 
             # Version for use with disabled consensus min D
             # f"bowtie2 -x {self.a['folder_stem']}consensus_data/{org_name}/reference_indices -U - -p {self.a['NThreads']} --local -I 50 --maxins 2000 --no-unal |"
@@ -303,7 +303,7 @@ class Consensus:
                           "viral_consensus", test_f_size=True)
 
         try:
-            self.fix_terminal_gaps(f"{self.a['folder_stem']}consensus_data/{org_name}/{org_name}_consensus_pos_counts.tsv",
+            self.fix_terminal_gaps(f"{self.a['folder_stem']}consensus_data/{org_name}/{org_name}_consensus_pos_counts.csv",
                                    f"{self.a['folder_stem']}consensus_data/{org_name}/{org_name}_remapped_consensus_sequence.fasta")
         except FileNotFoundError as ex:
             stoperr(f"Castanet call to ViralConsensus produced empty output. Check that it's installed using the dependency_check endpoint (see readme)")
@@ -366,14 +366,14 @@ class Consensus:
 
         '''remapped cons stats'''
         c_df = pd.read_csv(
-            f"{self.a['folder_stem']}/consensus_data/{org}/{org}_consensus_pos_counts.tsv")
+            f"{self.a['folder_stem']}/consensus_data/{org}/{org}_consensus_pos_counts.csv")
         try:
             gc = round((c_df["G"].sum() + c_df["C"].sum()) /
                        c_df["Total"].sum() * 100, 2)
         except:
             # RM < TODO Messy, tidy me
             c_df = pd.read_csv(
-                f"{self.a['folder_stem']}/consensus_data/{org}/{org}_consensus_pos_counts.tsv", sep="\t")
+                f"{self.a['folder_stem']}/consensus_data/{org}/{org}_consensus_pos_counts.csv", sep="\t")
             gc = round((c_df["G"].sum() + c_df["C"].sum()) /
                        c_df["Total"].sum() * 100, 2)
 
