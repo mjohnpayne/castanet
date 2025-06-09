@@ -39,18 +39,18 @@ class Consensus:
         '''Filter bam to specific target, call consensus sequence for sam alignment records, grouped by target'''
         loginfo(f"Calling consensuses on all targets for: {tar_name}")
         group_bam_fname = f"{self.a['folder_stem']}grouped_reads/{tar_name}/{tar_name}.bam"
-        shell(f"samtools view -b {self.fnames['master_bam']} {tar_name} "
-              f"> {group_bam_fname}")
+        shell(f"samtools view -b {self.fnames['master_bam']} '{tar_name}' "
+              f"> '{group_bam_fname}'")
         # TODO < Test output
         match_str = f"(^|\s){tar_name}"
         if len(tar_name) < 99:
             match_str = f"{match_str}($|\s)"
-        out = shell(f"samtools coverage {group_bam_fname} | grep -E '{match_str}'",
+        out = shell(f"samtools coverage '{group_bam_fname}' | grep -E '{match_str}'",
                     "Coverage, consensus filter bam", ret_output=True)
         # TODO < Output test
 
         try:
-            out = out.decode().replace("\n", "").split("\t")[6:9]
+            out = out.decode().replace("\n", "\t").split("\t")[6:9]
         except Exception as ex:
             raise loginfo(
                 f"Could not generate a consensus for target: {tar_name}\nException: {ex}")
@@ -63,12 +63,12 @@ class Consensus:
             loginfo(
                 f"Not adding subconsensus for {tar_name} to consensus for organism, as min D was {out[0]} and Map Q was {out[2]}")
             # TODO DISABLED FOR TEST
-            shell(f"rm -r {self.a['folder_stem']}grouped_reads/{tar_name}/")
+            shell(f"rm -r '{self.a['folder_stem']}grouped_reads/{tar_name}/'")
             return
         else:
             '''Else, call consensus on this target'''
             shell(
-                f"samtools consensus --call-fract 0.9 --min-depth {self.a['ConsensusMinD']} -f fasta {group_bam_fname} -o {self.a['folder_stem']}grouped_reads/{tar_name}/consensus_seqs_{tar_name}.fasta")
+                f"""samtools consensus --call-fract 0.9 --min-depth {self.a["ConsensusMinD"]} -f fasta '{group_bam_fname}' -o '{self.a['folder_stem']}grouped_reads/{tar_name}/consensus_seqs_{tar_name}.fasta'""")
 
     def collate_consensus_seqs(self, tar_name) -> None:
         '''Read and collate consensus seqs from per target to per organism'''
@@ -160,13 +160,13 @@ class Consensus:
         if len(ref_aln) > 1:
             '''Align flat consensus references'''
             out = shell(
-                f"mafft --thread {os.cpu_count()} --auto {self.fnames['flat_cons_refs']} > {ref_aln_fname}", is_test=True)
+                f"mafft --thread {self.a['NThreads']} --auto {self.fnames['flat_cons_refs']} > {ref_aln_fname}", is_test=True)
             error_handler_cli(out, ref_aln_fname, "mafft")
         else:
             '''If only 1 reference seq, the alignment wouldn't have worked - defer to temp refs file in these cases'''
             ref_aln_fname = self.fnames['flat_cons_refs']
         ref_aln_with_reads_fname = f"{self.a['folder_stem']}consensus_data/{org_name}/{org_name}_consensus_alignment.aln"
-        out = shell(f"mafft --thread {os.cpu_count()} --auto --addfragments {self.fnames['flat_cons_seqs']} {ref_aln_fname}"
+        out = shell(f"mafft --thread {self.a['NThreads']} --auto --addfragments {self.fnames['flat_cons_seqs']} {ref_aln_fname}"
                     f"> {ref_aln_with_reads_fname}", is_test=True)
         error_handler_cli(out, ref_aln_with_reads_fname,
                           "mafft", test_f_size=True)
@@ -225,12 +225,17 @@ class Consensus:
             [i["tar_name"].replace(">", "") for i in self.target_consensuses[org_name] if i["tar_name"].startswith(">")]]
 
         '''Merge all bam files in grouped reads dir where they correspond to current target group'''
-        shell(f"""samtools merge {self.a['folder_stem']}consensus_data/{org_name}/collated_reads_unf.bam {' '.join([f'{self.a["folder_stem"]}grouped_reads/{i}/{i}.bam' for i in target_dirs])}""",
+        bamstr = ' '.join(
+            [f"""'{self.a["folder_stem"]}grouped_reads/{i}/{i}.bam'""" for i in target_dirs])
+        shell(f"""samtools merge {self.a['folder_stem']}consensus_data/{org_name}/collated_reads_unf.bam {bamstr}""",
               "Samtools merge, ref-adjusted consensus call (CONSENSUS.PY)")
         '''Output coverage stats for target consensuses'''
         try:
-            shell(f"samtools coverage {self.a['folder_stem']}consensus_data/{org_name}/collated_reads_unf.bam | "
-                  f"grep -E '{'|'.join(self.probe_names[self.probe_names['probetype'] == org_name]['orig_target_id'].tolist())}' > {self.a['folder_stem']}consensus_data/{org_name}/target_consensus_coverage.csv")
+            probels = self.probe_names[self.probe_names['probetype']
+                                       == org_name]['orig_target_id'].tolist()
+            probels = [i.replace("|", "\|") for i in probels]
+            cmd = f"samtools coverage {self.a['folder_stem']}consensus_data/{org_name}/collated_reads_unf.bam | grep -E '{'|'.join(probels)}' > {self.a['folder_stem']}consensus_data/{org_name}/target_consensus_coverage.csv"
+            shell(cmd)
         except OSError as e:
             stoperr(f"We couldn't call a consensus because your list of probes is too long. This is a kernel limitation. Can you reduce the size of your probe panel?")
 
@@ -249,8 +254,11 @@ class Consensus:
             '''Index unfiltered bam, then filter for targets with sufficient coverage'''
             samtools_index(
                 f"{self.a['folder_stem']}consensus_data/{org_name}/collated_reads_unf.bam")
-            shell(f"samtools view -b {self.a['folder_stem']}consensus_data/{org_name}/collated_reads_unf.bam {' '.join([f'{i}' for i in coverage_filter])} "
-                  f"> {self.a['folder_stem']}consensus_data/{org_name}/collated_reads.bam")
+
+            probels = [f'{i}' for i in coverage_filter]
+            probels = [i.replace("|", "\|") for i in probels]
+            cmd = f"samtools view -b {self.a['folder_stem']}consensus_data/{org_name}/collated_reads_unf.bam {' '.join(probels)} > {self.a['folder_stem']}consensus_data/{org_name}/collated_reads.bam"
+            shell(cmd)
 
             '''Estimate number of mapped reads in the final alignment (get just primary mapped reads, div 2 to average F & R strands)'''
             self.eval_stats[org_name]["filtered_collated_read_num"] = round(samtools_read_num(
@@ -277,14 +285,14 @@ class Consensus:
                 f"{self.a['folder_stem']}consensus_data/{org_name}/{org_name}_consensus_sequence.fasta")
             shell(f"samtools fastq {self.a['folder_stem']}consensus_data/{org_name}/collated_reads.bam |"
                   f"bwa-mem2 mem -t {self.a['NThreads']} {self.a['folder_stem']}consensus_data/{org_name}/{org_name}_consensus_sequence.fasta - | "
-                  f"viral_consensus -i - -r {self.a['folder_stem']}consensus_data/{org_name}/{org_name}_consensus_sequence.fasta -o {flat_cons_fname} --min_depth {self.a['ConsensusMinD']} --out_pos_counts {self.a['folder_stem']}consensus_data/{org_name}/{org_name}_consensus_pos_counts.tsv")
+                  f"viral_consensus -i - -r {self.a['folder_stem']}consensus_data/{org_name}/{org_name}_consensus_sequence.fasta -o {flat_cons_fname} --min_depth {self.a['ConsensusMinD']} --out_pos_counts {self.a['folder_stem']}consensus_data/{org_name}/{org_name}_consensus_pos_counts.csv")
 
         elif self.a["Mapper"] == "bowtie2":
             shell(
                 f"bowtie2-build {self.a['folder_stem']}consensus_data/{org_name}/{org_name}_consensus_sequence.fasta {self.a['folder_stem']}consensus_data/{org_name}/reference_indices", is_test=True)
             shell(f"samtools fastq {self.a['folder_stem']}consensus_data/{org_name}/collated_reads.bam |"
                   f"bowtie2 -x {self.a['folder_stem']}consensus_data/{org_name}/reference_indices -U - -p {self.a['NThreads']} --local -I 50 --maxins 2000 --no-unal |"
-                  f"viral_consensus -i - -r {self.a['folder_stem']}consensus_data/{org_name}/{org_name}_consensus_sequence.fasta -o {flat_cons_fname} --min_depth {self.a['ConsensusMinD']} --out_pos_counts {self.a['folder_stem']}consensus_data/{org_name}/{org_name}_consensus_pos_counts.tsv")
+                  f"viral_consensus -i - -r {self.a['folder_stem']}consensus_data/{org_name}/{org_name}_consensus_sequence.fasta -o {flat_cons_fname} --min_depth {self.a['ConsensusMinD']} --out_pos_counts {self.a['folder_stem']}consensus_data/{org_name}/{org_name}_consensus_pos_counts.csv")
 
             # Version for use with disabled consensus min D
             # f"bowtie2 -x {self.a['folder_stem']}consensus_data/{org_name}/reference_indices -U - -p {self.a['NThreads']} --local -I 50 --maxins 2000 --no-unal |"
@@ -295,7 +303,7 @@ class Consensus:
                           "viral_consensus", test_f_size=True)
 
         try:
-            self.fix_terminal_gaps(f"{self.a['folder_stem']}consensus_data/{org_name}/{org_name}_consensus_pos_counts.tsv",
+            self.fix_terminal_gaps(f"{self.a['folder_stem']}consensus_data/{org_name}/{org_name}_consensus_pos_counts.csv",
                                    f"{self.a['folder_stem']}consensus_data/{org_name}/{org_name}_remapped_consensus_sequence.fasta")
         except FileNotFoundError as ex:
             stoperr(f"Castanet call to ViralConsensus produced empty output. Check that it's installed using the dependency_check endpoint (see readme)")
@@ -358,14 +366,14 @@ class Consensus:
 
         '''remapped cons stats'''
         c_df = pd.read_csv(
-            f"{self.a['folder_stem']}/consensus_data/{org}/{org}_consensus_pos_counts.tsv")
+            f"{self.a['folder_stem']}/consensus_data/{org}/{org}_consensus_pos_counts.csv")
         try:
             gc = round((c_df["G"].sum() + c_df["C"].sum()) /
                        c_df["Total"].sum() * 100, 2)
         except:
             # RM < TODO Messy, tidy me
             c_df = pd.read_csv(
-                f"{self.a['folder_stem']}/consensus_data/{org}/{org}_consensus_pos_counts.tsv", sep="\t")
+                f"{self.a['folder_stem']}/consensus_data/{org}/{org}_consensus_pos_counts.csv", sep="\t")
             gc = round((c_df["G"].sum() + c_df["C"].sum()) /
                        c_df["Total"].sum() * 100, 2)
 
@@ -402,8 +410,9 @@ class Consensus:
 
         '''Consensus for each thing target group'''
         [self.collate_consensus_seqs(tar_name) for tar_name in os.listdir(
-            f"{self.a['folder_stem']}/grouped_reads/")]
-        [self.call_flat_consensus(i) for i in self.target_consensuses.keys()]
+            f"{self.a['folder_stem']}/grouped_reads/") if "BACT" not in tar_name]
+        [self.call_flat_consensus(
+            i) for i in self.target_consensuses.keys() if i != "Unmatched"]
         self.clean_incomplete_consensus()
 
         '''Tidy up'''
@@ -411,7 +420,7 @@ class Consensus:
 
         '''Call CSV summary generator'''
         [self.generate_summary(i) for i in os.listdir(
-            f"{self.a['folder_stem']}/consensus_data/") if not "GROUND_TRUTH" in i and not ".fna" in i]
+            f"{self.a['folder_stem']}/consensus_data/") if not "GROUND_TRUTH" in i and not ".fna" in i and not i.startswith(".")]
 
         end_sec_print("INFO: Consensus calling complete")
 

@@ -17,24 +17,10 @@ o       O o       O o       O O       O o
 </p>
 Described in Mayne, R., Secret., S., Geoghegan, C., et al. (2024) Castanet: a pipeline for rapid analysis of targeted multi-pathogen genomic data. Bioinformatics, btae591. https://doi.org/10.1093/bioinformatics/btae591
 
-# New features with Version 8.2
-* Bowtie2 support extended in Consensus module
-* Parameterised Consensus enable/disable terminal trim (ConsensusTrimTerminals)
-* Expanded range of output statistics for Consensus module
-* Test suite updated
-* Additional support for Nanopore/single ended read users
-
-# New features with Version 8
-* Added user option to map with bowtie2, in addition to BWA-mem2
-* Troubleshooting section added to Wiki
-* Additional optional arguments added to Castanet lite (CLI)
-* Security and compatibility updates for modules: pydantic, fastapi, pandas, numpy
-* Bug fixes:
-    * Infile hashing now works as expected on amplicon pipeline
-    * Batch mode will now ignore non-directory items in a folder, rather than explictly calling an error
-    * Fixed issue where end of batch run summary files would fail to save, if input files and output directory were at different levels of directory nesting
-    * Fixed issue where Kraken2 call wasn't working for some users who had pre-existing installations in their PATH
-    * User guidance on running Castanet lite (CLI) fixed with correct path
+# New features with Version 8.3
+* Mac user and bacterial target support enhancements (thanks @mjohnpayne)
+* Test suite expanded to 80% coverage
+* Various minor bug fixes
 
 # [Documentation](https://github.com/MultipathogenGenomics/castanet/wiki)
 Castanet documentation is hosted on our [GitHub Wiki Page](https://github.com/MultipathogenGenomics/castanet/wiki)
@@ -63,6 +49,12 @@ Dotted lines indicate optional pipeline stages.
     * Fixed issue where end of batch run summary files would fail to save, if input files and output directory were at different levels of directory nesting
     * Fixed issue where Kraken2 call wasn't working for some users who had pre-existing installations in their PATH
     * User guidance on running Castanet lite (CLI) fixed with correct path
+1. Bowtie2 support extended in Consensus module
+1. Parameterised Consensus enable/disable terminal trim (ConsensusTrimTerminals)
+1. Expanded range of output statistics for Consensus module
+1. Test suite updated
+1. Additional support for Nanopore/single ended read users
+
 
 ## Version 7, 19/08/24
 1. Docker support
