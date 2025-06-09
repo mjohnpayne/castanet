@@ -26,7 +26,7 @@ class Dependencies:
                     f"{self.fol}{self.hash}_2_clean.fastq", f"{self.fol}{self.hash}_2_trimmings.fq"]
         out = shell(
             f"{trim_path} PE -threads {self.threads} data/eval/sim_reads_1.fastq.gz data/eval/sim_reads_2.fastq.gz {trimmies[0]} {trimmies[1]} {trimmies[2]} {trimmies[3]} ILLUMINACLIP:{self.p['AdaptP']}:2:10:7:1:true MINLEN:30", is_test=True)
-        error_handler_cli(out, trimmies[0], "trimmomatic", test_f_size=True)
+        error_handler_cli(out, trimmies[0], "trimmomatic_pe", test_f_size=True)
         [os.remove(f) for f in trimmies]
 
     def check_mapping(self):
