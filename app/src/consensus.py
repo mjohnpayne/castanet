@@ -33,7 +33,8 @@ class Consensus:
         if start_with_bam:
             self.fnames['master_bam'] = f"{self.a['ExpDir']}/{[i for i in os.listdir(self.a['ExpDir']) if i[-4:] == '.bam'][0]}"
         self.eval_stats = {}
-        make_dir(f"mkdir {self.a['folder_stem']}consensus_data/")
+        make_dir(f"{self.a['folder_stem']}consensus_data/")
+        make_dir(f"{self.a['folder_stem']}consensus_sequences/")
 
     def filter_bam(self, tar_name) -> None:
         '''Filter bam to specific target, call consensus sequence for sam alignment records, grouped by target'''
@@ -335,7 +336,12 @@ class Consensus:
         cons["-"] = cons.apply(lambda x: 1 if x["Total"] == 0 else 0, axis=1)
         cons["con"] = cons["con"].astype(str)
         cons.to_csv(in_fname)
-        save_fa(out_fname, f">CONSENSUS\n{''.join(cons['con'].tolist())}")
+        save_fa(
+            out_fname, f">{self.a['ExpName']}_{in_fname.split('/')[-1].split('_')[0]}_consensus_MinDepth{self.a['ConsensusMinD']}\n{''.join(cons['con'].tolist())}")
+        save_fa(
+            f"{self.a['folder_stem']}/consensus_sequences/{out_fname.split('/')[-1]}", f">{self.a['ExpName']}_{in_fname.split('/')[-1].split('_')[0]}_consensus_MinDepth{self.a['ConsensusMinD']}\n{''.join(cons['con'].tolist())}")
+        end_sec_print(
+            f"INFO: Consensus sequence saved to {self.a['folder_stem']}/consensus_sequences/")
 
     def clean_incomplete_consensus(self) -> None:
         '''If we had insufficient coverage for organism x, clean it from self vars and folder tree'''
