@@ -17,6 +17,11 @@ o       O o       O o       O O       O o
 </p>
 Described in Mayne, R., Secret., S., Geoghegan, C., et al. (2024) Castanet: a pipeline for rapid analysis of targeted multi-pathogen genomic data. Bioinformatics, btae591. https://doi.org/10.1093/bioinformatics/btae591
 
+# New in hotfix 8.3.1
+* Name of headers in consensus sequences now reflects sample name, organism type and minimum depth
+* Copies of consensus sequences are now saved to ./{experiment directory}/consensus_sequences/, to make them easier to find
+* Few misc small fixes
+
 # New features with Version 8.3
 * Mac user and bacterial target support enhancements (thanks @mjohnpayne)
 * Test suite expanded to 80% coverage
