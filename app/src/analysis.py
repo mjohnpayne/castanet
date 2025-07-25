@@ -134,22 +134,23 @@ class Analysis:
                     name = name[:-1]
 
             except Exception as e:
-                logerr(f"Castanet couldn't parse one or more of your probe names. Please ensure you've converted it to Castanet format with the /convert_mapping_reference/ endpoint and that input format was consistent with the format expected (see documentation).\n{s}\n{e}")
+                logerr(
+                    f"Castanet couldn't parse one or more of your probe names. Please ensure you've converted it to Castanet format with the /convert_mapping_reference/ endpoint and that input format was consistent with the format expected (see documentation).\n{s}\n{e}")
                 return s
             return name
 
         pdf.loc[pdf.genename.str.startswith('bact'), 'probetype'] = pdf.loc[pdf.genename.str.startswith(
             'bact')].target_id.apply(_pat_search)
 
-        '''Streptococcus mitis group (pneumo, mitis, oralis) are cross-mapping, so classify as S. pneumoniae all targets that are found in S.pneumo at least once in the database'''
-        pdf.loc[(pdf.target_id.apply(lambda x: 'pneumoniae' in x)) & (pdf.probetype.isin(('streptococcus_pneumoniae',
-                                                                                          'streptococcus_pseudopneumoniae', 'streptococcus_mitis', 'streptococcus_oralis'))), 'probetype'] = 'streptococcus_pneumoniae'
-        '''Streptococcus_agalactiae and Streptococcus_pyogenes cross-map as well, aggregate them'''
-        pdf.loc[(pdf.target_id.apply(lambda x: 'pyogenes' in x or 'agalactiae' in x)) & (pdf.probetype.isin(
-            ('Streptococcus_pyogenes', 'Streptococcus_agalactiae'))), 'probetype'] = 'streptococcus_agalactiae_pyogenes'
-        '''Enterobacteriacae are not distinguishable at this level so group them all'''
-        pdf.loc[pdf.probetype.apply(lambda x: x.startswith('escherichia') or x.startswith(
-            'klebsiella') or x.startswith('enterobacter')), 'probetype'] = 'enterobacteriaceae'
+        # '''Streptococcus mitis group (pneumo, mitis, oralis) are cross-mapping, so classify as S. pneumoniae all targets that are found in S.pneumo at least once in the database'''
+        # pdf.loc[(pdf.target_id.apply(lambda x: 'pneumoniae' in x)) & (pdf.probetype.isin(('streptococcus_pneumoniae',
+        #                                                                                   'streptococcus_pseudopneumoniae', 'streptococcus_mitis', 'streptococcus_oralis'))), 'probetype'] = 'streptococcus_pneumoniae'
+        # '''Streptococcus_agalactiae and Streptococcus_pyogenes cross-map as well, aggregate them'''
+        # pdf.loc[(pdf.target_id.apply(lambda x: 'pyogenes' in x or 'agalactiae' in x)) & (pdf.probetype.isin(
+        #     ('Streptococcus_pyogenes', 'Streptococcus_agalactiae'))), 'probetype'] = 'streptococcus_agalactiae_pyogenes'
+        # '''Enterobacteriacae are not distinguishable at this level so group them all'''
+        # pdf.loc[pdf.probetype.apply(lambda x: x.startswith('escherichia') or x.startswith(
+        #     'klebsiella') or x.startswith('enterobacter')), 'probetype'] = 'enterobacteriaceae'
         loginfo(
             f'Organism and gene summary: {pdf.probetype.nunique()} organisms, up to {pdf.groupby("probetype").genename.nunique().max()} genes each.')
         pdf.to_csv(f"{self.output_dir}/probe_aggregation.csv")

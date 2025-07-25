@@ -62,7 +62,7 @@ banner()
 
 app = FastAPI(
     title="Castanet",
-    version="0.3",
+    version="8.4",
     description=description,
     contact={
         "name": "Nuffield Department of Medicine, University of Oxford",
@@ -155,7 +155,7 @@ def do_batch(payload, start_with_bam=False):
     if not start_with_bam:
         '''Standard end to end pipelines'''
         SeqNamesList = [enumerate_read_files(
-            folder, payload["BatchName"]) for folder in sorted(os.listdir(payload["BatchName"])) if not folder == "__pycache__" and os.path.isdir(f"{payload['BatchName']}/{folder}")]
+            folder, single_ended_reads=payload["SingleEndedReads"], batch_name=payload["BatchName"]) for folder in sorted(os.listdir(payload["BatchName"])) if not folder == "__pycache__" and os.path.isdir(f"{payload['BatchName']}/{folder}")]
         SeqNamesList = [i for i in SeqNamesList if not i == []]
     else:
         '''BAM only pipelines'''
