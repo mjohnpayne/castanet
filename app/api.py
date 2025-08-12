@@ -36,7 +36,7 @@ logger.setLevel(logging.DEBUG)
 import_test()
 
 description = """
-CASTANET is software for analysis of targeted & metagenomic sequencing data, originally by tgolubch (https://github.com/tgolubch) and refactored to Python3 by mayne941 (https://github.com/Mayne941).
+CASTANET is software for analysis of targeted & metagenomic sequencing data.
 """
 
 tags_metadata = [
@@ -62,7 +62,7 @@ banner()
 
 app = FastAPI(
     title="Castanet",
-    version="8.4",
+    version="9.0",
     description=description,
     contact={
         "name": "Nuffield Department of Medicine, University of Oxford",
@@ -91,8 +91,12 @@ def process_payload(payload) -> dict:
                 vmem = psutil.virtual_memory()[1]
                 refseqs = read_fa(payload["RefStem"])
                 sizes = []
-                for i in refseqs:
-                    sizes.append(sys.getsizeof(i[1]) * 28)
+                try:
+                    for i in refseqs:
+                        sizes.append(sys.getsizeof(i[1]) * 28)
+                except IndexError:
+                    stoperr(f"Castanet failed in attempts to calculate the memory footprint of this job. "
+                            f"This usually happens when your mapping reference file (RefStem) doesn't contain a valid FASTA file.")
                 size_vs_vmem = sum(sizes) * n_cpus
                 if size_vs_vmem >= vmem:
                     payload["NThreads"] = numpy.ceil(
@@ -111,11 +115,6 @@ def process_payload(payload) -> dict:
         else:
             stoperr(
                 f"NThreads parameter should either be an integer, or 'auto' or 'hpc'.")
-
-    # Disable for manual consensus mode
-    # if "ConsensusMinD" in payload.keys():
-    #     if payload["ConsensusMinD"] <= 2:
-    #         stoperr(f"Consuensus min depth must exceed 2, otherwise you would inherit sections of reference sequence in the final remapped consensus.")
 
     write_input_params(payload)
     return payload
@@ -173,7 +172,7 @@ def do_batch(payload, start_with_bam=False):
             if not start_with_bam:
                 '''End to end pipelines'''
                 exp_name = SeqNames[0].split(
-                    "/")[-3]  # RM < TODO TEST THIS IS ROBUST WITH DIFFERENT FOL STRUCTURES
+                    "/")[-3]
                 payload["SeqNames"] = SeqNames
                 payload["ExpDir"] = "/".join(SeqNames[0].split("/")[:-1])
                 payload["ExpName"] = exp_name
@@ -195,7 +194,7 @@ def do_batch(payload, start_with_bam=False):
         agg_analysis_csvs,  f"{payload['SaveDir']}/{payload['BatchName'].split('/')[-1]}.csv")
     end_sec_print(msg)
     if len(errs) < 1:
-        return "f***\nBatch complete. Time to complete: {time.time() - st} ({(time.time() - st)/len(SeqNames)} per sample)\n{msg}\nFailed to process following samples: {errs}***"
+        return f"***\nBatch complete. Time to complete: {time.time() - st} ({(time.time() - st)/len(SeqNames)} per sample)\n{msg}\nFailed to process following samples: {errs}***"
     else:
         return "Batch process task completed with errors. See terminal output for details."
 
@@ -253,8 +252,9 @@ def run_end_to_end(payload, start_with_bam=False) -> str:
         run_map(payload)
     run_counts(payload, start_with_bam)
     run_analysis(payload, start_with_bam)
-    if payload["PostFilt"]:
-        run_post_filter(payload)
+    # if payload["PostFilt"]:
+    #     run_post_filter(payload)
+    # else:
     if payload["DoConsensus"]:
         do_consensus(payload, start_with_bam)
     return "Task complete. See terminal output for details."
@@ -329,8 +329,8 @@ async def analysis(payload: Analysis_data) -> str:
     return "Task complete. See terminal output for details."
 
 
-def run_analysis(payload, start_with_bam=False) -> None:
-    cls = Analysis(payload, start_with_bam)
+def run_analysis(payload, start_with_bam=False, is_post_filt=False) -> None:
+    cls = Analysis(payload, start_with_bam, is_post_filt)
     cls.main()
 
 

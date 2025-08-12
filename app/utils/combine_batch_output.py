@@ -16,7 +16,7 @@ def depth_csvs(fnames, out_fname):
 
 
 def cov_csvs(fnames, out_fname):
-    beeg_df = pd.DataFrame()
+    beeg_df = pd.DataFrame()  # TODO This really should be one function.
     for fname in fnames:
         try:
             df = pd.read_csv(fname.replace("_depth", "_coverage"))
@@ -26,6 +26,7 @@ def cov_csvs(fnames, out_fname):
             print(
                 f"Warning: Failed appending summary dataframe to batch csv: {fname}")
             continue
+    beeg_df = beeg_df.reindex(sorted(beeg_df.columns), axis=1)
     beeg_df.to_csv(out_fname.replace(".csv", "_coverage.csv"))
 
 

@@ -13,7 +13,8 @@ from app.utils.utility_fns import trim_long_fpaths, read_fa, enumerate_bam_files
 
 
 class Analysis:
-    def __init__(self, argies, start_with_bam, api_entry=True) -> None:
+    # TODO <Deprecate is_post_filt
+    def __init__(self, argies, start_with_bam, is_post_filt, api_entry=True) -> None:
         self.a = argies
         self.output_dir = f"{self.a['SaveDir']}/{self.a['ExpName']}/"
         self.bam_fname = f"{self.a['SaveDir']}/{self.a['ExpName']}/{self.a['ExpName']}.bam" if not start_with_bam else f"{argies['ExpDir']}/{[i for i in os.listdir(argies['ExpDir']) if i[-4:] == '.bam'][0]}"
@@ -142,6 +143,7 @@ class Analysis:
         pdf.loc[pdf.genename.str.startswith('bact'), 'probetype'] = pdf.loc[pdf.genename.str.startswith(
             'bact')].target_id.apply(_pat_search)
 
+        # TODO < RM removed with v9.0 as possibly not needed now
         # '''Streptococcus mitis group (pneumo, mitis, oralis) are cross-mapping, so classify as S. pneumoniae all targets that are found in S.pneumo at least once in the database'''
         # pdf.loc[(pdf.target_id.apply(lambda x: 'pneumoniae' in x)) & (pdf.probetype.isin(('streptococcus_pneumoniae',
         #                                                                                   'streptococcus_pseudopneumoniae', 'streptococcus_mitis', 'streptococcus_oralis'))), 'probetype'] = 'streptococcus_pneumoniae'
@@ -162,7 +164,7 @@ class Analysis:
 
     def add_depth(self, probelengths):
         ''' Calculate read depth per position. '''
-        if self.a["DepthInf"]:
+        if self.a["DepthInf"]:  # TODO < Deprecate precomputed depth (doesn't seem to be in api anyway)
             loginfo(
                 f'Reading read depth information from {self.a["DepthInf"]}.')
             try:

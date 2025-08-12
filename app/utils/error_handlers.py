@@ -44,9 +44,11 @@ def error_handler_filter_keep_reads(argies):
             if '' in taxa:
                 del taxa['']
             if platform.system() == "Darwin":
-                cmd = 'gzcat' if argies["LineageFile"].endswith('.gz') else 'cat'
+                cmd = 'gzcat' if argies["LineageFile"].endswith(
+                    '.gz') else 'cat'
             else:
-                cmd = 'zcat' if argies["LineageFile"].endswith('.gz') else 'cat'
+                cmd = 'zcat' if argies["LineageFile"].endswith(
+                    '.gz') else 'cat'
             handle = sp.Popen(
                 (cmd, argies["LineageFile"]), bufsize=8192, stdout=sp.PIPE).stdout
             line = read_line(handle)
@@ -86,16 +88,16 @@ def error_handler_analysis(argies) -> pd.DataFrame:
         stoperr('Unable to open input file {0}.'.format(argies["input_file"]))
 
     '''Validate sample info file'''
-    if argies["Clin"] != "":
-        if not os.path.isfile(argies["Clin"]):
-            stoperr(
-                f'Unable to open clinical data from input file {argies["Clin"]}.')
-        '''Validate clinical info file'''
-        with open(argies["Clin"]) as clin_inf:
-            clin_header_check = clin_inf.readline().split(',')
-            if ('pt' not in clin_header_check):
-                stoperr(
-                    f'{argies["Clin"]} must contain at least the following columns: pt, clin_int')
+    # if argies["Clin"] != "":
+    #     if not os.path.isfile(argies["Clin"]):
+    #         stoperr(
+    #             f'Unable to open clinical data from input file {argies["Clin"]}.')
+    #     '''Validate clinical info file'''
+    #     with open(argies["Clin"]) as clin_inf:
+    #         clin_header_check = clin_inf.readline().split(',')
+    #         if ('pt' not in clin_header_check):
+    #             stoperr(
+    #                 f'{argies["Clin"]} must contain at least the following columns: pt, clin_int')
 
     '''Open data frame'''
     try:
@@ -109,8 +111,8 @@ def error_handler_analysis(argies) -> pd.DataFrame:
     if df.empty:
         stoperr(f"Your Positions Count file is empty, meaning that Castanet didn't detect any significant hits in your input sample. This can sometimes mask an upstream problem, but may also mean that your sample is low quality and/or genuinely has nothing that maps to your mapping reference.")
 
-    if argies["DepthInf"] and not os.path.isfile(argies["DepthInf"]):
-        stoperr(f'Unable to open precomputed depth file {argies["DepthInf"]}.')
+    # if argies["DepthInf"] and not os.path.isfile(argies["DepthInf"]):
+    #     stoperr(f'Unable to open precomputed depth file {argies["DepthInf"]}.')
     return df
 
 
@@ -191,9 +193,9 @@ def get_cli_tool_errors(cli_tool):
         "java": {"healthy_msg": "usage: java",
                  "guidance": ""},
         "trimmomatic_pe": {"healthy_msg": "trimmomaticpe: started with arguments",
-                        "guidance": "Trimming produced empty files. Check your TrimMinLen parameter is not too short for your sequences and that Trimmomatic is isntalled (you may use the dependency_check endpoint to check your installation)."},
+                           "guidance": "Trimming produced empty files. Check your TrimMinLen parameter is not too short for your sequences and that Trimmomatic is isntalled (you may use the dependency_check endpoint to check your installation)."},
         "trimmomatic_se": {"healthy_msg": "trimmomaticse: started with arguments",
-                        "guidance": "Trimming produced empty files. Check your TrimMinLen parameter is not too short for your sequences and that Trimmomatic is isntalled (you may use the dependency_check endpoint to check your installation)."},
+                           "guidance": "Trimming produced empty files. Check your TrimMinLen parameter is not too short for your sequences and that Trimmomatic is isntalled (you may use the dependency_check endpoint to check your installation)."},
         "bwa-mem2": {"healthy_msg": "looking to launch executable",
                      "guidance": f"BWA-MEM2 produced an empty BAM file. Check your BWA-MEM2 installation and that your input reads are of sufficent quality. This might also indicate an out of memory error, if you're crunching a huge dataset: if so, rerun the experiment with less cores (NThreads parameter)."},
         "samtools": {"healthy_msg": "program: samtools",

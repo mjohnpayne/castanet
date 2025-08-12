@@ -36,9 +36,8 @@ class Parse_bam_positions:
         else:
             self.reads_by_hit[ref].append([id, seq])
 
-    def parse_bam_position(self, l):
+    def parse_bam_position(self, fields):
         '''GENERATE COUNTS STAGE: For each line passed in, parse fields of interest; identify matches and print back to stdout.'''
-        fields = l.split()
         id, ref, pos, ref2, tlen, cigar, seq = fields[0], fields[2], fields[3], fields[6], int(
             fields[8]), fields[5], fields[9]
 
@@ -67,22 +66,6 @@ class Parse_bam_positions:
         else:
             return
 
-    def filter_bam(self, l, reads_to_drop):
-        '''POST FILTER STAGE'''
-        if l.startswith('@'):
-            sys.stdout.write(l)
-            return
-        if len(reads_to_drop):
-            fields = l.split()
-            ref = fields[2]
-            pos = int(fields[3])
-            tlen = int(fields[8])
-            '''output only reads that are not found in the indexed READS_TO_DROP file'''
-            if not (ref, pos, tlen) in reads_to_drop.index:
-                sys.stdout.write(l)
-            else:
-                return
-
     def save_hit_dbs(self):
         grp_aln_f = f"{self.argies.SaveDir}/{self.argies.ExpName}/grouped_reads/"
         make_dir(f"mkdir {grp_aln_f}")
@@ -99,23 +82,39 @@ class Parse_bam_positions:
                 [file.write(f"{self.reads_by_hit[key][i][0]}\n")
                     for i in range(len(self.reads_by_hit[key]))]
 
+    def get_reads(self):
+        '''Read serialised BAM file into memory, create unique indexes for vectorised matching with filter list'''
+        headers = []
+        dat = {}
+        with open(f"{self.argies.SaveDir}/{self.argies.ExpName}/{self.argies.ExpName}_bamview.txt") as f:
+            for l in f:  # TODO < Could do this with streamio to avoid making the bamview. Arguably slower to do this but neater?
+                if l.startswith('@'):
+                    headers.append(l)
+                    return
+
+                fields = l.split()
+                ref = fields[2]
+                pos = int(fields[3])
+                tlen = int(fields[8])
+                if not f"{ref}_{pos}_{tlen}" in dat.keys():
+                    dat[f"{ref}_{pos}_{tlen}"] = []
+                dat[f"{ref}_{pos}_{tlen}"].append(fields)
+
+        return dat, headers  # currently no use for headers
+
     def main(self):
         '''Entrypoint. Multi functional across generate counts and post filter.'''
         error_handler_parse_bam_positions(sys.argv)
+        dat, _ = self.get_reads()
         if self.argies.Mode == "filter":
-            try:
-                reads_to_drop = pd.read_csv(
-                    self.argies.ExpDir + self.argies.FilterFile)
-            except:
-                raise SystemExit(
-                    f"Couldn't find reads to drop file: {self.argies.FilterFile}. Did your run generate one?")
+            '''Filter data if < n reads (default = 1/no unique)'''
+            N = 1  # TODO < Parameterise
+            dat = {k: v for k, v in dat.items() if len(v) > N}
 
-        with open(f"{self.argies.SaveDir}/{self.argies.ExpName}/{self.argies.ExpName}_bamview.txt") as f:
-            for l in f:
-                if self.argies.Mode == "parse":
-                    self.parse_bam_position(l)
-                else:
-                    self.filter_bam(l, reads_to_drop)
+        for key in dat.keys():
+            # TODO < Set up multiprocessing pool? Might not save much time
+            for read in dat[key]:
+                self.parse_bam_position(read)
 
         if len(self.reads_by_hit) == 0:
             '''No hits found between input BAM file and reference sequences'''

@@ -40,6 +40,6 @@ def run_counts(p, start_with_bam=False):
     shell(f"""samtools view -F2048 -F4 {in_file} > {bamview_fname}""")
     error_handler_cli(out, bamview_fname, "samtools")
     sp.run(  # Use subprocess run rather than Popen as complex call is a PITA
-        f"python3 -m app.src.parse_bam -Mode parse -SeqName {p['ExpName']} -ExpDir {p['ExpDir']}/ -ExpName {p['ExpName']} -SingleEnded {p['SingleEndedReads']} -SaveDir {p['SaveDir']} -MatchLength {p['MatchLength']} | sort | uniq -c | sed s'/ /,/'g | sed s'/^[,]*//'g > {p['SaveDir']}/{p['ExpName']}/{p['ExpName']}_PosCounts.csv", shell=True)
+        f"python3 -m app.src.parse_bam -Mode parse -SeqName {p['ExpName']} -ExpDir {p['ExpDir']}/ -ExpName {p['ExpName']} -Mode {p['PostFilt']} -SingleEnded {p['SingleEndedReads']} -SaveDir {p['SaveDir']} -MatchLength {p['MatchLength']} | sort | uniq -c | sed s'/ /,/'g | sed s'/^[,]*//'g > {p['SaveDir']}/{p['ExpName']}/{p['ExpName']}_PosCounts.csv", shell=True)
     shell(f"rm {bamview_fname}")
     end_sec_print("INFO: Counts generated")

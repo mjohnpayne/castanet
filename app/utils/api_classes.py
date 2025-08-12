@@ -5,7 +5,18 @@ from pydantic import BaseModel, Field, FilePath, DirectoryPath, validator
 '''Primitives'''
 
 
-class Data_BatchName(BaseModel):
+class Data_Ubiquitous(BaseModel):
+    DebugMode: bool = Query(False,
+                            description="If true, save all intermediate files. Set false on shared infrastructure to save on your data bills!")
+    NThreads: Union[int, str] = Query('auto',
+                                      description="Specify the number of threads for multi-core processing. Options: integer == this many threads; 'auto' == let Castanet choose number of threads; 'hpc' == select when running on a compute cluster (hard codes to 1).")
+    ExpName: str = Query('myexperiment',
+                         description="Name your experiment/batch")
+    SaveDir: str = Query('./experiments',
+                         description="Name the root folder for your experiments. Default is to make a sub folder for each experiment run, in the ./experiments folder of your Castanet repository.")
+
+
+class Data_DataFolder(BaseModel):
     DataFolder: DirectoryPath = Query('./data/my_experiments/',
                                       description="Path to recursively read for individual datasets.")
 
@@ -35,18 +46,6 @@ class Data_GenerateCounts(BaseModel):
                                    description="Set to true if using single-ended reads, e.g. if sequencing run ended half-way through.")
     MatchLength: int = Query(40,
                              description="Minimum length of signed template length (i.e. length of segment mapped to the specific reference/insert size) in bam file for Castanet to consider a proper match. Recommended not to amend unless user is confident they understand this setting.")
-
-
-class Data_NThreads(BaseModel):
-    NThreads: Union[int, str] = Query('auto',
-                                      description="Specify the number of threads for multi-core processing. Options: integer == this many threads; 'auto' == let Castanet choose number of threads; 'hpc' == select when running on a compute cluster (hard codes to 1).")
-
-
-class Data_ExpName(BaseModel):
-    ExpName: str = Query('myexperiment',
-                         description="Name your experiment/batch")
-    SaveDir: str = Query('./experiments',
-                         description="Name the root folder for your experiments. Default is to make a sub folder for each experiment run, in the ./experiments folder of your Castanet repository.")
 
 
 class Data_KrakenDir(BaseModel):
@@ -114,85 +113,6 @@ class Data_ConsensusParameters(BaseModel):
                                  description="(OPTIONAL - EVAL MODE ONLY) Name of target organism to measure ground truth sequence against.")
 
 
-'''Endpoint objects'''
-
-
-class E2e_data(Data_NThreads, Data_AdaptP, Data_MappingParameters,
-               Data_PostFilt, Data_AnalysisExtras, Data_KrakenDir,
-               Data_ConsensusParameters, Data_FilterFilters, Data_TrimmomaticParams, Data_GenerateCounts,
-               Data_RefStem, Data_ExpName, Data_ExpDir):
-    pass
-
-
-class Amp_e2e_data(Data_NThreads, Data_AdaptP, Data_MappingParameters,
-                   Data_KrakenDir, Data_FilterFilters,
-                   Data_TrimmomaticParams, Data_GenerateCounts,
-                   Data_RefStem, Data_ExpName, Data_ExpDir):
-    pass
-
-
-class E2e_eval_data(Data_ExpDir, Data_ExpName, Data_NThreads, Data_AdaptP, Data_RefStem, Data_MappingParameters,
-                    Data_PostFilt, Data_AnalysisExtras, Data_KrakenDir, Data_FilterFilters,
-                    Data_ConsensusParameters, Data_TrimmomaticParams, Data_GenerateCounts):
-    pass
-
-
-class Bam_workflow_data(Data_NThreads, Data_PostFilt, Data_AnalysisExtras, Data_ConsensusParameters,
-                        Data_GenerateCounts, Data_RefStem, Data_ExpName, Data_ExpDir):
-    pass
-
-
-class Preprocess_data(Data_ExpDir, Data_ExpName, Data_NThreads, Data_KrakenDir, Data_TrimmomaticParams):
-    pass
-
-
-class Filter_keep_reads_data(Data_ExpDir, Data_ExpName, Data_NThreads, Data_FilterFilters, Data_TrimmomaticParams):
-    pass
-
-
-class Trim_data(Data_ExpDir, Data_ExpName, Data_NThreads, Data_AdaptP, Data_TrimmomaticParams):
-    pass
-
-
-class Mapping_data(Data_ExpDir, Data_ExpName, Data_MappingParameters, Data_NThreads, Data_RefStem):
-    pass
-
-
-class Count_map_data(Data_ExpDir, Data_ExpName, Data_NThreads, Data_GenerateCounts):
-    pass
-
-
-class Analysis_data(Data_ExpDir, Data_ExpName, Data_NThreads, Data_AnalysisExtras, Data_RefStem):
-    pass
-
-
-class Post_filter_data(Data_ExpDir, Data_NThreads, Data_ExpName):
-    pass
-
-
-class Amplicon_data(Data_ExpDir, Data_NThreads, Data_ExpName):
-    pass
-
-
-class Batch_eval_data(Data_AdaptP, Data_PostFilt, Data_AnalysisExtras, Data_KrakenDir, Data_MappingParameters,
-                      Data_ConsensusParameters, Data_GenerateCounts, Data_FilterFilters, Data_TrimmomaticParams,
-                      Data_RefStem, Data_NThreads, Data_ExpName, Data_BatchName):
-    pass
-
-
-class Consensus_data(Data_ExpName, Data_NThreads, Data_RefStem, Data_ConsensusParameters, Data_MappingParameters):
-    pass
-
-
-class Eval_data(Data_ExpName, Data_NThreads, Data_RefStem,
-                Data_ConsensusParameters):
-    pass
-
-
-class Dep_check_data(Data_KrakenDir, Data_AdaptP):
-    pass
-
-
 class Convert_probe_data(BaseModel):
     InputFolder: str = Query("",
                              description="Folder path, wherein all .fasta files will be imported, collated and converted to a Castanet-compatible probe set.")
@@ -200,3 +120,82 @@ class Convert_probe_data(BaseModel):
                            description="Output path for collated probes fasta and probe length csv")
     OutFileName: str = Query("",
                              description="Output file name for collated probes fasta and probe length csv")
+
+
+'''Endpoint objects'''
+
+
+class E2e_data(Data_AdaptP, Data_MappingParameters,
+               Data_PostFilt, Data_AnalysisExtras, Data_KrakenDir,
+               Data_ConsensusParameters, Data_FilterFilters, Data_TrimmomaticParams, Data_GenerateCounts,
+               Data_RefStem, Data_Ubiquitous, Data_ExpDir):
+    pass
+
+
+class Amp_e2e_data(Data_AdaptP, Data_MappingParameters,
+                   Data_KrakenDir, Data_FilterFilters,
+                   Data_TrimmomaticParams, Data_GenerateCounts,
+                   Data_RefStem, Data_Ubiquitous, Data_ExpDir):
+    pass
+
+
+class E2e_eval_data(Data_Ubiquitous, Data_AdaptP, Data_RefStem, Data_MappingParameters,
+                    Data_PostFilt, Data_AnalysisExtras, Data_KrakenDir, Data_FilterFilters,
+                    Data_ConsensusParameters, Data_TrimmomaticParams, Data_GenerateCounts, Data_ExpDir):
+    pass
+
+
+class Bam_workflow_data(Data_PostFilt, Data_AnalysisExtras, Data_ConsensusParameters,
+                        Data_GenerateCounts, Data_RefStem, Data_Ubiquitous, Data_ExpDir):
+    pass
+
+
+class Preprocess_data(Data_Ubiquitous, Data_KrakenDir, Data_TrimmomaticParams, Data_ExpDir):
+    pass
+
+
+class Filter_keep_reads_data(Data_Ubiquitous, Data_FilterFilters, Data_TrimmomaticParams, Data_ExpDir):
+    pass
+
+
+class Trim_data(Data_Ubiquitous, Data_AdaptP, Data_TrimmomaticParams, Data_ExpDir):
+    pass
+
+
+class Mapping_data(Data_Ubiquitous, Data_MappingParameters, Data_GenerateCounts, Data_RefStem, Data_ExpDir):
+    pass
+
+
+class Count_map_data(Data_Ubiquitous, Data_GenerateCounts, Data_RefStem, Data_ExpDir):
+    pass
+
+
+class Analysis_data(Data_Ubiquitous, Data_AnalysisExtras, Data_RefStem, Data_ExpDir):
+    pass
+
+
+class Post_filter_data(Data_Ubiquitous, Data_AnalysisExtras, Data_RefStem, Data_ConsensusParameters, Data_MappingParameters, Data_GenerateCounts, Data_ExpDir):
+    pass
+
+
+class Amplicon_data(Data_Ubiquitous, Data_ExpDir):
+    pass
+
+
+class Batch_eval_data(Data_AdaptP, Data_PostFilt, Data_AnalysisExtras, Data_KrakenDir, Data_MappingParameters,
+                      Data_ConsensusParameters, Data_GenerateCounts, Data_FilterFilters, Data_TrimmomaticParams,
+                      Data_RefStem, Data_Ubiquitous, Data_DataFolder):
+    pass
+
+
+class Consensus_data(Data_Ubiquitous, Data_RefStem, Data_ConsensusParameters, Data_MappingParameters, Data_ExpDir):
+    pass
+
+
+class Eval_data(Data_Ubiquitous, Data_RefStem,
+                Data_ConsensusParameters, Data_ExpDir):
+    pass
+
+
+class Dep_check_data(Data_KrakenDir, Data_AdaptP):
+    pass
