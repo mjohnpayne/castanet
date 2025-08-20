@@ -198,8 +198,6 @@ class Consensus:
             if not self.a["DebugMode"]:
                 call_graph(self.a["ExpName"], org_name, f"{self.a['folder_stem']}consensus_data/{org_name}/{org_name}_consensus_alignment.aln",
                            f"{self.a['folder_stem']}consensus_data/{org_name}/{org_name}_target_consensus_alignment", self.a["SaveDir"], is_eval=False)
-                # print(f"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX GRAPH DISABLED FOR TEST")
-                # assert 1 == 1, breakpoint()
         except FileNotFoundError:
             raise SystemError(
                 "Castanet couldn't construct a consensus alignment graph")
@@ -216,8 +214,7 @@ class Consensus:
                 return ('', np.nan)
 
             try:
-                just_measured_bases = s[-int(len(s))
-                                             :].lower().replace("-", "").replace("n", "")
+                just_measured_bases = s[-int(len(s))                                        :].lower().replace("-", "").replace("n", "")
                 consbase, consnum = Counter(
                     just_measured_bases).most_common()[0]
 

@@ -1,12 +1,13 @@
 from __future__ import print_function
 import sys
 import re
-import pandas as pd
+import os
 
 from app.utils.error_handlers import error_handler_parse_bam_positions
 from app.utils.argparsers import parse_args_bam_parse
-from app.utils.shell_cmds import make_dir
+from app.utils.shell_cmds import make_dir, shell
 from app.utils.utility_fns import get_gene_orgid, trim_long_fpaths
+from app.utils.basic_cli_calls import samtools_index
 
 
 class Parse_bam_positions:
@@ -22,6 +23,12 @@ class Parse_bam_positions:
         self.min_match_length = int(self.argies.MatchLength)
         self.n = 3  # Min n reads to decide we want to make a consensus
         self.reads_by_hit = {}
+        self.fnames = {
+            "bam": f"{self.argies.SaveDir}/{self.argies.ExpName}/{self.argies.ExpName}.bam",
+            "bamview": f"{self.argies.SaveDir}/{self.argies.ExpName}/{self.argies.ExpName}_bamview.txt",
+            "delreads": f"{self.argies.SaveDir}/{self.argies.ExpName}/{self.argies.ExpName}_reads_to_del.txt",
+            "bamfilt": f"{self.argies.SaveDir}/{self.argies.ExpName}/{self.argies.ExpName}_filtered.bam"
+        }
 
     def getmatchsize(self, cigar):
         '''Find matches in cigar string with regex, return count'''
@@ -61,8 +68,8 @@ class Parse_bam_positions:
         if match or improper_match:
             '''Properly paired and match is of decent mapped length OR
             Improperly paired BUT same gene AND match is of decent mapped length (via CIGAR string lookup) AND RNAME ref organism is same to RNEXT ref org'''
-            print(f'{ref},{pos},{tlen},{self.argies.ExpName}')
             self.build_target_dbs(ref, seq, id)
+            return [ref, pos, tlen, id]
         else:
             return
 
@@ -86,19 +93,17 @@ class Parse_bam_positions:
         '''Read serialised BAM file into memory, create unique indexes for vectorised matching with filter list'''
         headers = []
         dat = {}
-        with open(f"{self.argies.SaveDir}/{self.argies.ExpName}/{self.argies.ExpName}_bamview.txt") as f:
-            for l in f:  # TODO < Could do this with streamio to avoid making the bamview. Arguably slower to do this but neater?
-                if l.startswith('@'):
-                    headers.append(l)
-                    return
+        for l in open(self.fnames['bamview']):
+            if l.startswith('@'):  # ignore headers
+                continue
 
-                fields = l.split()
-                ref = fields[2]
-                pos = int(fields[3])
-                tlen = int(fields[8])
-                if not f"{ref}_{pos}_{tlen}" in dat.keys():
-                    dat[f"{ref}_{pos}_{tlen}"] = []
-                dat[f"{ref}_{pos}_{tlen}"].append(fields)
+            res = self.parse_bam_position(l.split())
+            if not res:
+                continue
+            if not f"{res[0]}_{res[1]}_{res[2]}" in dat.keys():
+                dat[f"{res[0]}_{res[1]}_{res[2]}"] = []
+            dat[f"{res[0]}_{res[1]}_{res[2]}"].append(
+                [f'{res[0]},{res[1]},{res[2]},{self.argies.ExpName}', res[3]])
 
         return dat, headers  # currently no use for headers
 
@@ -106,15 +111,26 @@ class Parse_bam_positions:
         '''Entrypoint. Multi functional across generate counts and post filter.'''
         error_handler_parse_bam_positions(sys.argv)
         dat, _ = self.get_reads()
-        if self.argies.Mode == "filter":
-            '''Filter data if < n reads (default = 1/no unique)'''
-            N = 1  # TODO < Parameterise
-            dat = {k: v for k, v in dat.items() if len(v) > N}
+        # if self.argies.Mode: # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+        #     '''Filter data if < n reads (default = 1/no unique)'''
+        #     N = 1  # TODO < Parameterise
+        #     '''Kill original BAM and replace with one that's been filtered'''
+        #     with open(self.fnames["delreads"], "w") as f:
+        #         [f.write(f"{v[0][1]}\n") for v in dat.values() if len(v) <= 1]
+        #     shell(f"samtools view -b -N {self.fnames['delreads']} {self.fnames['bam']} > {self.fnames['bamfilt']}")
+        #     # TODO < Test output
+        #     os.remove(self.fnames['bam'])
+        #     os.rename(self.fnames['bamfilt'], self.fnames['bam'])
+        #     os.remove(self.fnames['delreads'])
+        #     samtools_index(self.fnames['bam'])
+
+        #     '''Make new data dictionary'''
+        #     dat = {k: v for k, v in dat.items() if len(v) > N}
 
         for key in dat.keys():
-            # TODO < Set up multiprocessing pool? Might not save much time
             for read in dat[key]:
-                self.parse_bam_position(read)
+                print(read[0])  # TODO
+        #         self.parse_bam_position(read)
 
         if len(self.reads_by_hit) == 0:
             '''No hits found between input BAM file and reference sequences'''

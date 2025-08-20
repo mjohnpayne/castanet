@@ -55,9 +55,9 @@ def run_map(p):
         out = shell(
             f"bowtie2-build --large-index {p['RefStem']} {p['SaveDir']}/reference_indices", is_test=True)
         if p["SingleEndedReads"]:
-            shell(f"bowtie2 -x {p['SaveDir']}/reference_indices -U {in_files[0]} -p {p['NThreads']} --local -I 50 --maxins 2000 --no-unal | samtools view -h -Sb -F4 -F2048 - | samtools sort - 1> {p['SaveDir']}/{p['ExpName']}/{p['ExpName']}.bam")
+            shell(f"bowtie2 -x {p['SaveDir']}/reference_indices -U {in_files[0]} -p {p['NThreads']} --local -I 50 --maxins 2000 --no-unal | samtools view -@ {p['NThreads']} -h -Sb -F4 -F2048 - | samtools sort -@ {p['NThreads']} - 1> {p['SaveDir']}/{p['ExpName']}/{p['ExpName']}.bam")
         else:
-            shell(f"bowtie2 -x {p['SaveDir']}/reference_indices -1 {in_files[0]} -2 {in_files[1]} -p {p['NThreads']} --local -I 50 --maxins 2000 --no-unal | samtools view -h -Sb -F4 -F2048 - | samtools sort - 1> {p['SaveDir']}/{p['ExpName']}/{p['ExpName']}.bam")
+            shell(f"bowtie2 -x {p['SaveDir']}/reference_indices -1 {in_files[0]} -2 {in_files[1]} -p {p['NThreads']} --local -I 50 --maxins 2000 --no-unal | samtools view -@ {p['NThreads']} -h -Sb -F4 -F2048 - | samtools sort -@ {p['NThreads']} - 1> {p['SaveDir']}/{p['ExpName']}/{p['ExpName']}.bam")
         error_handler_cli(
             out, f"{p['SaveDir']}/{p['ExpName']}/{p['ExpName']}.bam", "bowtie2", test_f_size=True)
 

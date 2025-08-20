@@ -166,7 +166,7 @@ class Mapping_data(Data_Ubiquitous, Data_MappingParameters, Data_GenerateCounts,
     pass
 
 
-class Count_map_data(Data_Ubiquitous, Data_GenerateCounts, Data_RefStem, Data_ExpDir):
+class Count_map_data(Data_Ubiquitous, Data_GenerateCounts, Data_RefStem, Data_PostFilt, Data_ExpDir):
     pass
 
 

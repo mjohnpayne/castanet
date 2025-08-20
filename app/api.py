@@ -252,9 +252,6 @@ def run_end_to_end(payload, start_with_bam=False) -> str:
         run_map(payload)
     run_counts(payload, start_with_bam)
     run_analysis(payload, start_with_bam)
-    # if payload["PostFilt"]:
-    #     run_post_filter(payload)
-    # else:
     if payload["DoConsensus"]:
         do_consensus(payload, start_with_bam)
     return "Task complete. See terminal output for details."
