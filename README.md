@@ -23,8 +23,7 @@ Described in Mayne, R., Secret., S., Geoghegan, C., et al. (2024) Castanet: a pi
 * Consensus algorithm enhancements to give more representative results with highly diverse/recombination-prone viruses
 * Post filter option for removing uniquely-mapping reads (uses include removal of index hopping reads)
 * BAM parsing enhancements for compute time and memory footprint.
-* Parameterised "debug mode", where if True no intermediate files are generated (cleaner output to save space, esp. for use on shared infrastructure)
-* Support for user-provided mapping reference sequence names (see Wiki > Usage)
+* Parameterised "debug mode", where if False no intermediate files are generated (cleaner output to save space, esp. for use on shared infrastructure)
 * Test suite updates
 * Various QOL & bug fixes
 
