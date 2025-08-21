@@ -372,10 +372,6 @@ class Consensus:
         rm(f"{self.fnames['temp_folder']}", "-r")
         find_and_delete(
             f"{self.a['folder_stem']}grouped_reads/", "*.bam")
-        find_and_delete(
-            f"{self.a['folder_stem']}consensus_data/", "*.p")
-        find_and_delete(
-            f"{self.a['folder_stem']}consensus_data/", "*.bam")
 
     def generate_summary(self, org) -> None:
         dfpath = f"{self.a['folder_stem']}/consensus_seq_stats.csv"
@@ -454,15 +450,21 @@ class Consensus:
             f"{self.a['folder_stem']}/grouped_reads/") if "BACT" not in tar_name]
         [self.call_flat_consensus(
             i) for i in self.target_consensuses.keys() if i != "Unmatched"]
+        '''Tidy up'''
         self.clean_incomplete_consensus()
+        self.tidy()
 
         '''Call CSV summary generator'''
         [self.generate_summary(i) for i in os.listdir(
             f"{self.a['folder_stem']}/consensus_data/") if not "GROUND_TRUTH" in i and not ".fna" in i and not i.startswith(".")]
 
-        '''Tidy up'''
-        self.tidy()
+        '''Final tidy up'''
         shell(f"rm {group_consensus_fname}")
+        find_and_delete(
+            f"{self.a['folder_stem']}consensus_data/", "*.p")
+        find_and_delete(
+            f"{self.a['folder_stem']}consensus_data/", "*.bam")
+
         end_sec_print("INFO: Consensus calling complete")
 
 
