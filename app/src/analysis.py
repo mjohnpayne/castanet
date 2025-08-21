@@ -14,7 +14,7 @@ from app.utils.utility_fns import trim_long_fpaths, read_fa, enumerate_bam_files
 
 class Analysis:
     # TODO <Deprecate is_post_filt
-    def __init__(self, argies, start_with_bam, is_post_filt, api_entry=True) -> None:
+    def __init__(self, argies, start_with_bam, api_entry=True) -> None:
         self.a = argies
         self.output_dir = f"{self.a['SaveDir']}/{self.a['ExpName']}/"
         self.bam_fname = f"{self.a['SaveDir']}/{self.a['ExpName']}/{self.a['ExpName']}.bam" if not start_with_bam else f"{argies['ExpDir']}/{[i for i in os.listdir(argies['ExpDir']) if i[-4:] == '.bam'][0]}"
@@ -241,15 +241,15 @@ class Analysis:
                 loginfo(
                     f'Mean amplification ratio for {probetype}: {amprate.mean()}')
 
-                '''Save arrays as CSV'''
-                with open(f'{odir}/{probetype}-{sampleid}_depth_by_pos.csv', 'a') as o:
-                    np.savetxt(o, D, fmt='%d', newline=',')
-                    o.write('\n')
-                    np.savetxt(o, D1, fmt='%d', newline=',')
-                    o.write('\n')
+                # '''Save arrays as CSV''' # Deprecated as of v9.0
+                # with open(f'{odir}/{probetype}-{sampleid}_depth_by_pos.csv', 'a') as o:
+                #     np.savetxt(o, D, fmt='%d', newline=',')
+                #     o.write('\n')
+                #     np.savetxt(o, D1, fmt='%d', newline=',')
+                #     o.write('\n')
 
                 '''Save array plots as pdf if significant'''
-                if D1.mean() >= 0.01:  # RM < TODO Parameterise to be more sensitive on amplicon PL.
+                if D1.mean() >= 0.01:
                     plot_df = pd.DataFrame()
                     plot_df["position"], plot_df["All Reads"], plot_df["Deduplicated Reads"] = np.arange(
                         0, D.shape[0]), D, D1
@@ -439,13 +439,14 @@ class Analysis:
         depth = self.add_depth(probelengths)
         '''Merge in sample info  (including total raw reads) and participant data if specified'''
         depth = self.add_read_d_and_clin(depth)
-        self.df["sampleid"] = self.df["sampleid"].astype(str)
-        self.df = self.df.merge(
-            depth, on=['sampleid', 'probetype'], how='left')
-        self.df.to_csv(
-            f'{self.output_dir}/{self.a["ExpName"]}_fullself.df.csv.gz', index=False, compression='gzip')
+        if self.a["DebugMode"]:
+            self.df["sampleid"] = self.df["sampleid"].astype(str)
+            self.df = self.df.merge(
+                depth, on=['sampleid', 'probetype'], how='left')
+            self.df.to_csv(
+                f'{self.output_dir}/{self.a["ExpName"]}_fullself.df.csv.gz', index=False, compression='gzip')
+            self.read_coverage_chart()
         self.read_dist_piechart()
-        self.read_coverage_chart()
         loginfo(
             f'Finished. Saved final data frame as {self.output_dir}/{self.a["ExpName"]}_fullself.df.csv.gz')
         end_sec_print("INFO: Analysis complete.")

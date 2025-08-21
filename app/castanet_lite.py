@@ -23,10 +23,8 @@ def defaults():
         "RetainNames": "",
         "ExcludeNames": "Homo",
         "ConsensusMinD": 10,
-        "ConsensusCoverage": 30,
         "ConsensusMapQ": 1,
         "ConsensusTrimTerminals": True,
-        "ConsensusCleanFiles": True,
         "GtFile": "",
         "GtOrg": "",
         "KrakenDbDir": "kraken2_human_db/",
@@ -36,7 +34,8 @@ def defaults():
         "SamplesFile": "",
         "PostFilt": False,
         "AdaptP": "data/all_adapters.fa",
-        "NThreads": "auto"
+        "NThreads": "auto",
+        "DebugMode": False
     }
 
 

@@ -14,7 +14,7 @@ from app.utils.fnames import get_consensus_fnames
 from app.utils.system_messages import end_sec_print
 from app.utils.basic_cli_calls import (
     samtools_index, bwa_index, find_and_delete, rm, samtools_read_num)
-from app.utils.error_handlers import error_handler_consensus_ref_corrected, error_handler_cli
+from app.utils.error_handlers import error_handler_cli
 from app.utils.similarity_graph import call_graph
 
 
@@ -24,6 +24,7 @@ class Consensus:
 
     def __init__(self, payload, start_with_bam) -> None:
         self.a = payload
+        self.a['ConsensusCoverage'] = 10  # Hard-coded from V9.0
         self.a["folder_stem"] = f"{self.a['SaveDir']}/{self.a['ExpName']}/"
         self.target_consensuses = {}
         self.insufficient_coverage_orgs = []
@@ -139,7 +140,7 @@ class Consensus:
 
         self.build_msa_requisites(org_name)
         flat_consensus = self.flatten_consensus(org_name)
-        save_fa(f"{self.a['folder_stem']}consensus_data/{org_name}/{org_name}_consensus_sequence.fasta",
+        save_fa(f"{self.a['folder_stem']}consensus_data/{org_name}/{org_name}_flat_consensus_sequence.fasta",
                 f">{org_name}_consensus\n{flat_consensus}")
 
         '''Remap to re-made flat consensus, to make `re-mapped consensus`'''
@@ -195,7 +196,7 @@ class Consensus:
                           "mafft", test_f_size=True)
 
         try:
-            if not self.a["DebugMode"]:
+            if self.a["DebugMode"]:
                 call_graph(self.a["ExpName"], org_name, f"{self.a['folder_stem']}consensus_data/{org_name}/{org_name}_consensus_alignment.aln",
                            f"{self.a['folder_stem']}consensus_data/{org_name}/{org_name}_target_consensus_alignment", self.a["SaveDir"], is_eval=False)
         except FileNotFoundError:
@@ -214,7 +215,8 @@ class Consensus:
                 return ('', np.nan)
 
             try:
-                just_measured_bases = s[-int(len(s))                                        :].lower().replace("-", "").replace("n", "")
+                just_measured_bases = s[-int(len(s))
+                                             :].lower().replace("-", "").replace("n", "")
                 consbase, consnum = Counter(
                     just_measured_bases).most_common()[0]
 
@@ -243,9 +245,11 @@ class Consensus:
         '''Plot identity for QC'''
         cluster_cons.columns = ['cons', 'ident']
         cluster_cons["ident"].rolling(120).mean().plot()
-        fig = px.line(x=cluster_cons.index,
-                      y=cluster_cons["ident"], title="Flat consensus identity")
-        fig.write_image(f"{alnfpath}{org_name}_flat_consensus_identity.png")
+        if self.a["DebugMode"]:
+            fig = px.line(x=cluster_cons.index,
+                          y=cluster_cons["ident"], title="Flat consensus identity")
+            fig.write_image(
+                f"{alnfpath}{org_name}_flat_consensus_identity.png")
 
         return "".join(cluster_cons["cons"].tolist())
 
@@ -270,7 +274,7 @@ class Consensus:
             probels = [f'{i}' for i in coverage_filter]
             # Split into 2 due to backslash in f string
             probels = [i.replace("|", "\|") for i in probels]
-            cmd = f"samtools view -b {self.fnames['master_bam']} {' '.join(probels)} > {self.a['folder_stem']}consensus_data/{org_name}/collated_reads.bam"
+            cmd = f"samtools view -@ {self.a['NThreads']} -b {self.fnames['master_bam']} {' '.join(probels)} > {self.a['folder_stem']}consensus_data/{org_name}/collated_reads.bam"
             shell(cmd)
             # TODO test output
 
@@ -299,18 +303,18 @@ class Consensus:
 
         if self.a["Mapper"] == "bwa":
             bwa_index(
-                f"{self.a['folder_stem']}consensus_data/{org_name}/{org_name}_consensus_sequence.fasta")
-            shell(f"samtools fastq {self.fnames['master_bam']} |"
-                  f"bwa-mem2 mem -t {self.a['NThreads']} {self.a['folder_stem']}consensus_data/{org_name}/{org_name}_consensus_sequence.fasta - | "
-                  f"viral_consensus -i - -r {self.a['folder_stem']}consensus_data/{org_name}/{org_name}_consensus_sequence.fasta -o {flat_cons_fname} --min_depth {self.a['ConsensusMinD']} --out_pos_counts {self.a['folder_stem']}consensus_data/{org_name}/{org_name}_consensus_pos_counts.csv")
+                f"{self.a['folder_stem']}consensus_data/{org_name}/{org_name}_flat_consensus_sequence.fasta")
+            shell(f"samtools fastq -@ {self.a['NThreads']} {self.fnames['master_bam']} |"
+                  f"bwa-mem2 mem -t {self.a['NThreads']} {self.a['folder_stem']}consensus_data/{org_name}/{org_name}_flat_consensus_sequence.fasta - | "
+                  f"viral_consensus -i - -r {self.a['folder_stem']}consensus_data/{org_name}/{org_name}_flat_consensus_sequence.fasta -o {flat_cons_fname} --min_depth {self.a['ConsensusMinD']} --out_pos_counts {self.a['folder_stem']}consensus_data/{org_name}/{org_name}_consensus_pos_counts.csv")
 
         # TODO < tidy common elements # TODO < delete btl intermediate files
         elif self.a["Mapper"] == "bowtie2":
             shell(
-                f"bowtie2-build {self.a['folder_stem']}consensus_data/{org_name}/{org_name}_consensus_sequence.fasta {self.a['folder_stem']}consensus_data/{org_name}/reference_indices", is_test=True)
-            shell(f"samtools fastq {self.fnames['master_bam']} |"
+                f"bowtie2-build {self.a['folder_stem']}consensus_data/{org_name}/{org_name}_flat_consensus_sequence.fasta {self.a['folder_stem']}consensus_data/{org_name}/reference_indices", is_test=True)
+            shell(f"samtools fastq -@ {self.a['NThreads']} {self.fnames['master_bam']} |"
                   f"bowtie2 -x {self.a['folder_stem']}consensus_data/{org_name}/reference_indices -U - -p {self.a['NThreads']} --local -I 50 --maxins 2000 --no-unal |"
-                  f"viral_consensus -i - -r {self.a['folder_stem']}consensus_data/{org_name}/{org_name}_consensus_sequence.fasta -o {flat_cons_fname} --min_depth {self.a['ConsensusMinD']} --out_pos_counts {self.a['folder_stem']}consensus_data/{org_name}/{org_name}_consensus_pos_counts.csv")
+                  f"viral_consensus -i - -r {self.a['folder_stem']}consensus_data/{org_name}/{org_name}_flat_consensus_sequence.fasta -o {flat_cons_fname} --min_depth {self.a['ConsensusMinD']} --out_pos_counts {self.a['folder_stem']}consensus_data/{org_name}/{org_name}_consensus_pos_counts.csv")
 
         error_handler_cli("", flat_cons_fname,
                           "viral_consensus", test_f_size=True)
@@ -339,7 +343,6 @@ class Consensus:
         cons["con"] = cons.apply(lambda x: x.idxmax(), axis=1)
         '''Re-do index and totals'''
         cons["Pos"] = np.arange(1, cons.shape[0] + 1)
-        # RM < TODO PLOT CONS COVERAGE
         cons["Total"] = cons.apply(
             lambda x: x["A"] + x["T"] + x["C"] + x["G"] + x["-"], axis=1)
         '''Fix artificial adnylation where totals = 0 (pd idxmax annoyingly picks first col in this case)'''
@@ -360,17 +363,19 @@ class Consensus:
         for org_name in self.insufficient_coverage_orgs:
             del self.target_consensuses[org_name]
             shell(f"rm -r {self.a['folder_stem']}/consensus_data/{org_name}/")
+        rm(f"{self.fnames['flat_cons_seqs']} {self.fnames['flat_cons_refs']}")
+        rm(f"{self.a['folder_stem']}/consensus_data/unaligned_consensuses_and_refs.fna")
 
     def tidy(self) -> None:
         '''Remove intermediate files to save disc space'''
         rm(f"{self.fnames['collated_reads_fastq']}")
         rm(f"{self.fnames['temp_folder']}", "-r")
-        rm(f"{self.fnames['flat_cons_seqs']} {self.fnames['flat_cons_refs']}")
         find_and_delete(
             f"{self.a['folder_stem']}grouped_reads/", "*.bam")
-        if self.a['ConsensusCleanFiles']:
-            find_and_delete(
-                f"{self.a['folder_stem']}consensus_data/", "*.bam")
+        find_and_delete(
+            f"{self.a['folder_stem']}consensus_data/", "*.p")
+        find_and_delete(
+            f"{self.a['folder_stem']}consensus_data/", "*.bam")
 
     def generate_summary(self, org) -> None:
         dfpath = f"{self.a['folder_stem']}/consensus_seq_stats.csv"
@@ -404,10 +409,11 @@ class Consensus:
         df = pd.concat([df, c_stats], axis=0, ignore_index=True)
         df.to_csv(dfpath)
 
-        '''Plot consensus coverage'''
-        px.line(c_df, x="Pos", y="Total", title=f"Consensus coverage, {org} ({self.a['ExpName']})",
-                labels={"Pos": "Position", "Total": "Num Reads"}).write_image(
-            f"{self.a['folder_stem']}/consensus_data/{org}/{org}_consensus_coverage.png")
+        if self.a["DebugMode"]:
+            '''Plot consensus coverage'''
+            px.line(c_df, x="Pos", y="Total", title=f"Consensus coverage, {org} ({self.a['ExpName']})",
+                    labels={"Pos": "Position", "Total": "Num Reads"}).write_image(
+                f"{self.a['folder_stem']}/consensus_data/{org}/{org}_consensus_coverage.png")
 
     def main(self) -> None:
         '''Entrypoint. Index main bam, filter it, make target consensuses, then create flattened consensus'''
@@ -416,9 +422,12 @@ class Consensus:
         samtools_index(f"{self.fnames['master_bam']}")
         group_consensus_fname = f"{self.a['folder_stem']}consensus_temp.fasta"
 
-        '''Move into loop to call only consensus and coverage for relevant targets'''
-        shell(
-            f"""samtools consensus --call-fract 0.9 --min-depth {self.a["ConsensusMinD"]} -f fasta '{self.fnames['master_bam']}' -o '{group_consensus_fname}'""")
+        '''Get consensus and coverage for each target, memoize'''
+        out = shell("samtools", is_test=True)
+        shell(  # TODO < Check if quicker in loop?
+            f"""samtools consensus -@ {self.a['NThreads']} --min-depth {self.a["ConsensusMinD"]} -f fasta '{self.fnames['master_bam']}' -o '{group_consensus_fname}'""")
+        error_handler_cli(out, group_consensus_fname,
+                          "samtools", test_out_f=True, test_f_size=True)
 
         naive_consensuses_raw = {i[0].replace(
             ">", ""): i[1] for i in read_fa(f"{group_consensus_fname}")}
@@ -432,11 +441,10 @@ class Consensus:
 
         end_sec_print("INFO: Calling coverage across all targets")
         self.coverage = pd.read_csv(io.StringIO(shell(f"samtools coverage '{self.fnames['master_bam']}'", "Coverage, consensus filter bam", ret_output=True).decode(
-        )), sep="\t")  # TODO break coverage out of loop (send "out"); grep needs to stay (switch to sed?)
+        )), sep="\t")
         assert not self.coverage.empty, "Call to samtools coverage returned empty output. Check that your bam file is indexed and that the path to it is correct."
         self.coverage["#rname"] = self.coverage.apply(
             lambda x: x["#rname"][0:100].lower(), axis=1)  # Truncate to 100 chars
-        #
 
         for tar_name in os.listdir(f"{self.a['folder_stem']}grouped_reads/"):
             self.filter_bam(tar_name)
@@ -448,13 +456,13 @@ class Consensus:
             i) for i in self.target_consensuses.keys() if i != "Unmatched"]
         self.clean_incomplete_consensus()
 
-        '''Tidy up'''
-        self.tidy()
-        shell(f"rm {group_consensus_fname}")
-
         '''Call CSV summary generator'''
         [self.generate_summary(i) for i in os.listdir(
             f"{self.a['folder_stem']}/consensus_data/") if not "GROUND_TRUTH" in i and not ".fna" in i and not i.startswith(".")]
+
+        '''Tidy up'''
+        self.tidy()
+        shell(f"rm {group_consensus_fname}")
         end_sec_print("INFO: Consensus calling complete")
 
 

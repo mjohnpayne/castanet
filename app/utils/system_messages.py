@@ -23,6 +23,9 @@ def banner():
           ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
         Rich Mayne & Tanya Golubchik
 https://doi.org/10.1093/bioinformatics/btae591
+
+Access the GUI at http://127.0.0.1:8001/docs/
+(if running locally, using default settings)
           """)
 
 

@@ -87,18 +87,6 @@ def error_handler_analysis(argies) -> pd.DataFrame:
     if not os.path.isfile(argies["input_file"]):
         stoperr('Unable to open input file {0}.'.format(argies["input_file"]))
 
-    '''Validate sample info file'''
-    # if argies["Clin"] != "":
-    #     if not os.path.isfile(argies["Clin"]):
-    #         stoperr(
-    #             f'Unable to open clinical data from input file {argies["Clin"]}.')
-    #     '''Validate clinical info file'''
-    #     with open(argies["Clin"]) as clin_inf:
-    #         clin_header_check = clin_inf.readline().split(',')
-    #         if ('pt' not in clin_header_check):
-    #             stoperr(
-    #                 f'{argies["Clin"]} must contain at least the following columns: pt, clin_int')
-
     '''Open data frame'''
     try:
         df = pd.read_csv(argies["input_file"], compression=('gzip' if argies["input_file"].endswith('.gz') else None), header=None,
@@ -111,8 +99,6 @@ def error_handler_analysis(argies) -> pd.DataFrame:
     if df.empty:
         stoperr(f"Your Positions Count file is empty, meaning that Castanet didn't detect any significant hits in your input sample. This can sometimes mask an upstream problem, but may also mean that your sample is low quality and/or genuinely has nothing that maps to your mapping reference.")
 
-    # if argies["DepthInf"] and not os.path.isfile(argies["DepthInf"]):
-    #     stoperr(f'Unable to open precomputed depth file {argies["DepthInf"]}.')
     return df
 
 

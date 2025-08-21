@@ -97,16 +97,16 @@ class Data_MappingParameters(BaseModel):
 class Data_ConsensusParameters(BaseModel):
     DoConsensus: bool = Query(True,
                               description="If true, run the Castanet consensus generator pipeline stage (default = True).")
-    ConsensusMinD: float = Query(10,
+    ConsensusMinD: float = Query(5,
                                  description="Minimum base depth required to make a call, for consensus calling functions (ignored if DoConsensus = false)")
-    ConsensusCoverage: float = Query(30.0,
-                                     description="Do not generate consensus if coverage < n. Applies to both target consensuses and final, remapped consensus (ignored if DoConsensus = false).")
+    # ConsensusCoverage: float = Query(30.0, # RM < TODO Hidden with v9
+    #                                  description="Do not generate consensus if coverage < n. Applies to both target consensuses and final, remapped consensus (ignored if DoConsensus = false).")
     ConsensusMapQ: float = Query(1.0,
                                  description="Minimum quality value for a target consensus to be included in the remapped consensus (ignored if DoConsensus = false).")
     ConsensusTrimTerminals: bool = Query(True,
                                          description="Trim terminals of consensus sequence where both 3' and 5' end are ambiguous or gaps, AND constitute >5 percent of total genome length.")
-    ConsensusCleanFiles: bool = Query(True,
-                                      description="If True, consensus generator will delete BAM files for reads aggregated to each target organism. Disable to retain files for use in downstream analysis (ignored if DoConsensus = false).")
+    # ConsensusCleanFiles: bool = Query(True, # RM < TODO deprecated with v9
+    #                                   description="If True, consensus generator will delete BAM files for reads aggregated to each target organism. Disable to retain files for use in downstream analysis (ignored if DoConsensus = false).")
     GtFile: Optional[str] = Query('',
                                   description="(OPTIONAL - EVAL MODE ONLY) CSV file containing at least columns: `Primary_accession` and `GenBank_accession` for evaluating consensus seqs vs ground truth")
     GtOrg: Optional[str] = Query('',
@@ -120,6 +120,11 @@ class Convert_probe_data(BaseModel):
                            description="Output path for collated probes fasta and probe length csv")
     OutFileName: str = Query("",
                              description="Output file name for collated probes fasta and probe length csv")
+
+
+class Combine_output_data(BaseModel):
+    DataFolder: DirectoryPath = Query('./data/my_experiments/',
+                                      description="Path to recursively read for individual datasets. Output will be saved here as two CSV files (for depth and coverage).")
 
 
 '''Endpoint objects'''
