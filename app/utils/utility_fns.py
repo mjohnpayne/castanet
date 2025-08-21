@@ -63,7 +63,7 @@ def trim_long_fpaths(key, max_len=100):
         return key
 
 
-def enumerate_read_files(exp_dir, single_ended_reads, batch_name=None):
+def enumerate_read_files(exp_dir, single_ended_reads=False, batch_name=None):
     if not exp_dir[-1] == "/":
         exp_dir = f"{exp_dir}/"
     accepted_formats = [".fq", ".fastq", ".gz"]
