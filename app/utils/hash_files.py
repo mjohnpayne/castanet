@@ -19,7 +19,8 @@ def hash_me(fname):
 
 def check_infile_hashes(payload, exp_dir):
     '''If an ExpDir already exists, check if hashes exist and gate if input data changed.'''
-    payload["SeqNames"] = enumerate_read_files(payload["ExpDir"], payload["SingleEndedReads"])
+    payload["SeqNames"] = enumerate_read_files(
+        payload["ExpDir"], payload["SingleEndedReads"])
     existing_hashes = {}
     if os.path.exists(exp_dir):
         try:
@@ -27,9 +28,11 @@ def check_infile_hashes(payload, exp_dir):
                 existing_hashes[fname] = pickle.load(
                     open(f"{exp_dir}/hashes/{fname.split('/')[-1]}.p", "rb"))
         except:
-            stoperr(f"You're trying to run an experiment in a directory that already exists, but has no data hashes to compare against. "
-                    f"This is a safety feature to stop you from overwriting data. "
-                    f"Either change your save directory or delete the existing file.")
+            ...
+            # breakpoint()
+            # stoperr(f"You're trying to run an experiment in a directory that already exists, but has no data hashes to compare against. "
+            #         f"This is a safety feature to stop you from overwriting data. "
+            #         f"Either change your save directory or delete the existing file.")
 
     '''Make experiment directory and hash new files'''
     make_exp_dir(exp_dir)

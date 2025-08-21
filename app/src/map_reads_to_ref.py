@@ -16,7 +16,8 @@ def run_map(p):
     for fn in in_files:
         '''If default infiles not present, look in ExpDir for user-specified ones'''
         if not os.path.exists(fn):
-            in_files = enumerate_read_files(f"{p['ExpDir']}/", p["SingleEndedReads"])
+            in_files = enumerate_read_files(
+                f"{p['ExpDir']}/", p["SingleEndedReads"])
             CLEAN_UP = False
     for fn in in_files:
         if os.stat(fn).st_size < 2:
@@ -37,9 +38,11 @@ def run_map(p):
             f"INFO: Beginning initial mapping using BWA\nThis may take a while for large files")
         out = shell(f"bwa-mem2 index {p['RefStem']}", is_test=True)
         if p["SingleEndedReads"]:
-            shell(f"bwa-mem2 mem -t {p['NThreads']} {p['RefStem']} {in_files[0]} | samtools view -F4 -Sb - | samtools sort - 1> {p['SaveDir']}/{p['ExpName']}/{p['ExpName']}.bam")
+            shell(
+                f"bwa-mem2 mem -t {p['NThreads']} {p['RefStem']} {in_files[0]} | samtools view -F4 -Sb - | samtools sort - 1> {p['SaveDir']}/{p['ExpName']}/{p['ExpName']}.bam")
         else:
-            shell(f"bwa-mem2 mem -t {p['NThreads']} {p['RefStem']} {in_files[0]} {in_files[1]} | samtools view -F4 -Sb - | samtools sort - 1> {p['SaveDir']}/{p['ExpName']}/{p['ExpName']}.bam")
+            shell(
+                f"bwa-mem2 mem -t {p['NThreads']} {p['RefStem']} {in_files[0]} {in_files[1]} | samtools view -F4 -Sb - | samtools sort - 1> {p['SaveDir']}/{p['ExpName']}/{p['ExpName']}.bam")
         error_handler_cli(
             out, f"{p['SaveDir']}/{p['ExpName']}/{p['ExpName']}.bam", "bwa-mem2", test_f_size=True)
 
@@ -52,9 +55,9 @@ def run_map(p):
         out = shell(
             f"bowtie2-build --large-index {p['RefStem']} {p['SaveDir']}/reference_indices", is_test=True)
         if p["SingleEndedReads"]:
-            ... # RM < TODO
+            shell(f"bowtie2 -x {p['SaveDir']}/reference_indices -U {in_files[0]} -p {p['NThreads']} --local -I 50 --maxins 2000 --no-unal | samtools view -@ {p['NThreads']} -h -Sb -F4 -F2048 - | samtools sort -@ {p['NThreads']} - 1> {p['SaveDir']}/{p['ExpName']}/{p['ExpName']}.bam")
         else:
-            shell(f"bowtie2 -x {p['SaveDir']}/reference_indices -1 {in_files[0]} -2 {in_files[1]} -p {p['NThreads']} --local -I 50 --maxins 2000 --no-unal | samtools view -h -Sb -F4 -F2048 - | samtools sort - 1> {p['SaveDir']}/{p['ExpName']}/{p['ExpName']}.bam")
+            shell(f"bowtie2 -x {p['SaveDir']}/reference_indices -1 {in_files[0]} -2 {in_files[1]} -p {p['NThreads']} --local -I 50 --maxins 2000 --no-unal | samtools view -@ {p['NThreads']} -h -Sb -F4 -F2048 - | samtools sort -@ {p['NThreads']} - 1> {p['SaveDir']}/{p['ExpName']}/{p['ExpName']}.bam")
         error_handler_cli(
             out, f"{p['SaveDir']}/{p['ExpName']}/{p['ExpName']}.bam", "bowtie2", test_f_size=True)
 

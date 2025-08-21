@@ -17,15 +17,15 @@ o       O o       O o       O O       O o
 </p>
 Described in Mayne, R., Secret., S., Geoghegan, C., et al. (2024) Castanet: a pipeline for rapid analysis of targeted multi-pathogen genomic data. Bioinformatics, btae591. https://doi.org/10.1093/bioinformatics/btae591
 
-# New in hotfix 8.3.1
-* Name of headers in consensus sequences now reflects sample name, organism type and minimum depth
-* Copies of consensus sequences are now saved to ./{experiment directory}/consensus_sequences/, to make them easier to find
-* Few misc small fixes
+<a href="https://hub.docker.com/r/mayne941/castanet"><img src="docs/docker-mark-blue.png" alt="drawing" width="25" /> Try Castanet with Docker @ DockerHub</a>
 
-# New features with Version 8.3
-* Mac user and bacterial target support enhancements (thanks @mjohnpayne)
-* Test suite expanded to 80% coverage
-* Various minor bug fixes
+# New in V9.0
+* Consensus algorithm enhancements to give more representative results with highly diverse/recombination-prone viruses
+* Post filter option for removing uniquely-mapping reads (uses include removal of index hopping reads)
+* BAM parsing enhancements for compute time and memory footprint.
+* Parameterised "debug mode", where if False no intermediate files are generated (cleaner output to save space, esp. for use on shared infrastructure)
+* Test suite updates
+* Various QOL & bug fixes
 
 # [Documentation](https://github.com/MultipathogenGenomics/castanet/wiki)
 Castanet documentation is hosted on our [GitHub Wiki Page](https://github.com/MultipathogenGenomics/castanet/wiki)
@@ -59,6 +59,10 @@ Dotted lines indicate optional pipeline stages.
 1. Expanded range of output statistics for Consensus module
 1. Test suite updated
 1. Additional support for Nanopore/single ended read users
+1. Name of headers in consensus sequences now reflects sample name, organism type and minimum depth
+1. Copies of consensus sequences are now saved to ./{experiment directory}/consensus_sequences/, to make them easier to find
+1. Mac user and bacterial target support enhancements (thanks @mjohnpayne)
+1. Test suite expanded to 80% coverage
 
 
 ## Version 7, 19/08/24

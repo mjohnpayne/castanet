@@ -1,16 +1,19 @@
 import os
+import pickle
 import subprocess as sp
 from app.utils.utility_fns import enumerate_bam_files
 from app.utils.shell_cmds import shell
 from app.utils.system_messages import end_sec_print
 from app.utils.shell_cmds import stoperr
 from app.utils.error_handlers import error_handler_cli
+from app.src.parse_bam import Parse_bam_positions
 
 
 def run_counts(p, start_with_bam=False):
     '''Pipe mapped bam into parse functions, generate counts and consensus groupings'''
     '''Default BAM name, propagated in end to end function'''
     in_file = f"{p['SaveDir']}/{p['ExpName']}/{p['ExpName']}.bam"
+    p["counts_pickle"] = f"{p['SaveDir']}/{p['ExpName']}/{p['ExpName']}_counts.p"
     if start_with_bam:
         '''Only for start_with_bam, which uses a different infile config'''
         try:
@@ -37,9 +40,22 @@ def run_counts(p, start_with_bam=False):
     end_sec_print("Info: Generating read counts ")
     '''Included blank call to SAMtools for error handler, as successful call prints nowt'''
     out = shell(f"samtools", is_test=True)
-    shell(f"""samtools view -F2048 -F4 {in_file} > {bamview_fname}""")
+    shell(
+        f"""samtools view -@ {p['NThreads']} -F2048 -F4 {in_file} > {bamview_fname}""")
     error_handler_cli(out, bamview_fname, "samtools")
-    sp.run(  # Use subprocess run rather than Popen as complex call is a PITA
-        f"python3 -m app.src.parse_bam -Mode parse -SeqName {p['ExpName']} -ExpDir {p['ExpDir']}/ -ExpName {p['ExpName']} -SingleEnded {p['SingleEndedReads']} -SaveDir {p['SaveDir']} -MatchLength {p['MatchLength']} | sort | uniq -c | sed s'/ /,/'g | sed s'/^[,]*//'g > {p['SaveDir']}/{p['ExpName']}/{p['ExpName']}_PosCounts.csv", shell=True)
+
+    # TODO < quicker to print data file through lambda than read pickle?
+    Parse_bam_positions(p).main()
+    sp.run(
+        f"""python3 -c 'import app.src.generate_counts, sys; app.src.generate_counts.stream_counts(sys.argv[1])' '{p['counts_pickle']}' | sort | uniq -c | sed s'/ /,/'g | sed s'/^[,]*//'g > {p['SaveDir']}/{p['ExpName']}/{p['ExpName']}_PosCounts.csv""", shell=True)
+
     shell(f"rm {bamview_fname}")
+    shell(f"rm {p['counts_pickle']}")
     end_sec_print("INFO: Counts generated")
+
+
+def stream_counts(f):
+    dat = pickle.load(open(f, "rb"))
+    for key in dat.keys():
+        for read in dat[key]:
+            print(read[0])
