@@ -185,7 +185,7 @@ def get_cli_tool_errors(cli_tool):
         "bwa-mem2": {"healthy_msg": "looking to launch executable",
                      "guidance": f"BWA-MEM2 produced an empty BAM file. Check your BWA-MEM2 installation and that your input reads are of sufficent quality. This might also indicate an out of memory error, if you're crunching a huge dataset: if so, rerun the experiment with less cores (NThreads parameter)."},
         "samtools": {"healthy_msg": "program: samtools",
-                     "guidance": ""},
+                     "guidance": "Samtools produced an empty output file. Maybe your mapping reference doesn't correspond to any reads in your input data? If PostFilt is set to true, try setting to false and re-run."},
         "mafft": {"healthy_msg": "generating a scoring matrix for nucleotide",
                   "guidance": ""},
         "viral_consensus": {"healthy_msg": "",
