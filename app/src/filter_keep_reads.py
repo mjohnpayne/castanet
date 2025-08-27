@@ -7,6 +7,9 @@ from app.utils.shell_cmds import loginfo, read_line, shell, logerr
 from app.utils.error_handlers import error_handler_filter_keep_reads
 from app.utils.system_messages import end_sec_print
 from app.utils.utility_fns import enumerate_read_files
+'''
+DEPRECATED AS OF V9.0
+'''
 
 
 class FilterKeepReads:
@@ -18,7 +21,8 @@ class FilterKeepReads:
     def __init__(self, argies) -> None:
         '''Convert API arguments to format of argparser'''
         self.a = argies
-        self.a["input_file"] = enumerate_read_files(argies["ExpDir"], argies["SingleEndedReads"])
+        self.a["input_file"] = enumerate_read_files(
+            argies["ExpDir"], argies["SingleEndedReads"])
         self.a["kraken"] = f"{argies['SaveDir']}/{argies['ExpName']}/{argies['ExpName']}.kraken"
         '''Run error handler, build output fnames, extend retain/exclude IDs from names'''
         if self.a["DoKrakenPrefilter"]:

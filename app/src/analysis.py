@@ -181,6 +181,7 @@ class Analysis:
         if not depth:
             metrics = {}
             odir = f'{self.output_dir}/Depth_output'
+            raw_readcount = get_read_num(self.a, self.bam_fname)
             if os.path.isdir(odir):
                 '''Clear dir if already exists'''
                 shell(f"rm -r {odir}")
@@ -264,6 +265,7 @@ class Analysis:
                 metrics[sampleid, probetype] = (g.n.sum(), g.n.count(), n_targets, n_genes, nmax_targets, nmax_genes, nmax_probetype, npos,
                                                 amprate.mean(), amprate.std(), np.median(amprate),
                                                 D.mean(), D.std(), np.percentile(D, 25), np.median(D), np.percentile(D, 75),
+                                                raw_readcount,
                                                 (D > 0).sum(),
                                                 (D >= 2).sum(),
                                                 (D >= 5).sum(),
@@ -279,9 +281,10 @@ class Analysis:
                                                 (D1 >= 1000).sum())
 
             '''Data frame of all depth metrics'''
-            depth = pd.DataFrame(metrics, index=['n_reads_all', 'n_reads_dedup', 'n_targets', 'n_genes', 'nmax_targets', 'nmax_genes', 'npos_max_probetype', 'npos_cov_probetype',
+            depth = pd.DataFrame(metrics, index=['reads_for_mapping', 'n_reads_dedup', 'n_targets', 'n_genes', 'nmax_targets', 'nmax_genes', 'npos_max_probetype', 'npos_cov_probetype',
                                                  'amprate_mean', 'amprate_std', 'amprate_median',
                                                  'depth_mean', 'depth_std', 'depth_25pc', 'depth_median', 'depth_75pc',
+                                                 'raw_readcount',
                                                  'npos_cov_mindepth1',
                                                  'npos_cov_mindepth2',
                                                  'npos_cov_mindepth5',
@@ -300,20 +303,21 @@ class Analysis:
 
             '''Add reads on target (rot)'''
             try:
-                rot = depth.groupby('sampleid').n_reads_all.sum().reset_index()
+                rot = depth.groupby(
+                    'sampleid').reads_for_mapping.sum().reset_index()
             except:
                 stoperr(
                     f'ERROR: Depth dataframe seems to be empty. This usually happens when the naming conventions in your mapping reference file can\'t be resolved by Castanet: please see readme for details of correct formatting.')
 
             rot.rename(
-                columns={'n_reads_all': 'reads_on_target'}, inplace=True)
+                columns={'reads_for_mapping': 'reads_on_target'}, inplace=True)
             depth = depth.merge(rot, on='sampleid', how='left')
             rot_dedup = depth.groupby(
                 'sampleid').n_reads_dedup.sum().reset_index()
             rot_dedup.rename(
                 columns={'n_reads_dedup': 'reads_on_target_dedup'}, inplace=True)
             depth = depth.merge(rot_dedup, on='sampleid', how='left')
-            depth['prop_of_reads_on_target'] = depth.n_reads_all / \
+            depth['prop_of_reads_on_target'] = depth.reads_for_mapping / \
                 depth.reads_on_target
             depth['prop_npos_cov1'] = depth.npos_cov_mindepth1 / \
                 depth.npos_max_probetype
@@ -335,9 +339,10 @@ class Analysis:
             depth['log10_udepthmean'] = depth.udepth_mean.apply(
                 lambda x: np.log10(x+1))
             '''Duplicated reads only'''
-            depth['clean_n_reads_all'] = depth.n_reads_all-depth.n_reads_dedup
+            depth['clean_reads_for_mapping'] = depth.reads_for_mapping - \
+                depth.n_reads_dedup
             depth['clean_prop_of_reads_on_target'] = (
-                depth.n_reads_all-depth.n_reads_dedup)/depth.reads_on_target
+                depth.reads_for_mapping-depth.n_reads_dedup)/depth.reads_on_target
             '''Save and log'''
             loginfo(f'Saving {self.output_dir}/{self.a["ExpName"]}_depth.csv.')
             depth.to_csv(
@@ -387,7 +392,7 @@ class Analysis:
         samples['sampleid'] = samples['sampleid'].astype(str)
         '''Merge read n (and clin data if supplied) to depth counts, return'''
         cdf = depth.merge(samples, on='sampleid', how='left')
-        cdf['readprop'] = cdf.n_reads_all/cdf.rawreadnum
+        cdf['readprop'] = cdf.reads_for_mapping/cdf.rawreadnum
         loginfo(
             f'Added the following columns to depth csv: {list(samples.columns)}')
         cdf.to_csv(
@@ -409,7 +414,7 @@ class Analysis:
     def read_dist_piechart(self):
         df = pd.read_csv(
             f"{self.output_dir}{self.a['ExpName']}_depth.csv")
-        fig = px.pie(df, values=df["n_reads_all"], names=df["probetype"],
+        fig = px.pie(df, values=df["reads_for_mapping"], names=df["probetype"],
                      title=f"Read distribution, {self.a['ExpName']}")
         fig.update_traces(textposition='inside',
                           textinfo='percent+label+value')
