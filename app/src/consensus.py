@@ -41,24 +41,23 @@ class Consensus:
     def filter_bam(self, tar_name) -> None:
         '''Filter bam to specific target, call consensus sequence for sam alignment records, grouped by target'''
         loginfo(f"Calling consensuses on all targets for: {tar_name}")
-        match_str = f"{tar_name}".lower()
+        tar_name = tar_name.lower()
         is_regex = False
         if len(tar_name) > 99:
             is_regex = True
-            match_str = f"(^|\s){match_str[0:100]}($|\s)"
+            tar_name = f"(^|\s){tar_name[0:100]}($|\s)"
 
         coverage = self.coverage[self.coverage['#rname'].str.lower().str.contains(
-            match_str, regex=is_regex)]  # Needs to be a regex with separate match in case mismatch on length
+            tar_name, regex=is_regex)]  # Needs to be a regex with separate match in case mismatch on length
 
         if coverage.shape[0] > 1:
-            coverage = coverage[coverage["#rname"] == tar_name.lower()[0:100]]
+            coverage = coverage[coverage["#rname"] == tar_name[0:100]]
 
         try:
             if tar_name != coverage.iloc[0][0]:
                 self.naive_consensuses[tar_name] = self.naive_consensuses[coverage.iloc[0][0]]
                 self.naive_consensuses.pop(coverage.iloc[0][0])
         except:
-            # breakpoint() #######################
             stoperr(
                 f"Couldn't match consensus {tar_name} to read library. Have you tried to run this on a pre-existing data folder? Are you sure your mapping reference names are compatible with Castanet?")
 
@@ -216,7 +215,8 @@ class Consensus:
                 return ('', np.nan)
 
             try:
-                just_measured_bases = s[-int(len(s)):].lower().replace("-", "").replace("n", "")
+                just_measured_bases = s[-int(len(s))
+                                             :].lower().replace("-", "").replace("n", "")
                 consbase, consnum = Counter(
                     just_measured_bases).most_common()[0]
 
@@ -258,8 +258,6 @@ class Consensus:
         probels = self.probe_names[self.probe_names['probetype']
                                    == org_name]['orig_target_id'].str.lower().tolist()
         coverage_df = self.coverage[self.coverage['#rname'].isin(probels)]
-        # if coverage_df.empty:
-        #     breakpoint()
         assert not coverage_df.empty, f"Call to samtools coverage returned empty output. Check that your bam file is indexed and that the path to it is correct."
 
         '''Get coverage for each consensus, filter collated bam by consensus coverage and map q'''

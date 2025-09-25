@@ -19,6 +19,13 @@ Described in Mayne, R., Secret., S., Geoghegan, C., et al. (2024) Castanet: a pi
 
 <a href="https://hub.docker.com/r/mayne941/castanet"><img src="docs/docker-mark-blue.png" alt="drawing" width="25" /> Try Castanet with Docker @ DockerHub</a>
 
+# New in V9.0.2
+* Additional support for ONT users
+    * Option to use Minimap2 as mapper
+    * Utility function for concatenating all .fastq.gz files in a directory to a single, Castanet-compatible file
+* Bug fixes
+    * Bug where certain non-Castanet-compliant mapping reference headers would cause failure to generate consensus sequences
+
 # New in V9.0
 * Consensus algorithm enhancements to give more representative results with highly diverse/recombination-prone viruses
 * Post filter option for removing uniquely-mapping reads (uses include removal of index hopping reads)

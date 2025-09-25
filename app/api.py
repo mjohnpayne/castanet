@@ -14,6 +14,7 @@ from app.utils.error_handlers import error_handler_api
 from app.utils.generate_probe_files import ProbeFileGen
 from app.utils.combine_batch_output import combine_output_csvs, combine_output_from_endpoint
 from app.utils.dependency_check import Dependencies
+from app.utils.mapping_ref_checks import check_mapping_refs
 from app.src.preprocess import run_kraken
 from app.src.filter_keep_reads import FilterKeepReads
 from app.src.trim_adapters import run_trim
@@ -79,7 +80,9 @@ app = FastAPI(
 
 
 def process_payload(payload) -> dict:
+    '''Parse payload and do initial input checks'''
     payload = jsonable_encoder(payload)
+    check_mapping_refs(payload["RefStem"])
 
     if "NThreads" in payload.keys():
         if type(payload["NThreads"]) == str:
