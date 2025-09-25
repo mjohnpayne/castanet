@@ -127,6 +127,15 @@ class Combine_output_data(BaseModel):
                                       description="Path to recursively read for individual datasets. Output will be saved here as two CSV files (for depth and coverage).")
 
 
+class Concat_ont_data(BaseModel):
+    InDir: DirectoryPath = Query('./data/my_ont_experiments/',
+                                 description="Path to recursively read for individual datasets. Each subdirectory will be treated as a separate sample, and all .fastq.gz files in each subdirectory will be concatenated to a single file for input to Castanet.")
+    OutDir: str = Query('./data/my_ont_experiments_concatenated/',
+                        description="Path to save concatenated output files. Each subdirectory in the input directory will have a corresponding subdirectory here, containing the concatenated .fastq.gz file.")
+    AllowedFormat: str = Query('.fastq.gz',
+                               description="File format to search for and concatenate. Default is .fastq.gz.")
+
+
 '''Endpoint objects'''
 
 

@@ -20,9 +20,12 @@ Described in Mayne, R., Secret., S., Geoghegan, C., et al. (2024) Castanet: a pi
 <a href="https://hub.docker.com/r/mayne941/castanet"><img src="docs/docker-mark-blue.png" alt="drawing" width="25" /> Try Castanet with Docker @ DockerHub</a>
 
 # New in V9.0.2
+##### N.b. if upgrading an existing installation, users will need to install minimap2 to their Castanet Conda environment manually!
+##### $ conda install -c bioconda -y minimap2
 * Additional support for ONT users
     * Option to use Minimap2 as mapper
     * Utility function for concatenating all .fastq.gz files in a directory to a single, Castanet-compatible file
+* Mapping reference file checks are now completed at the start of each run, and users are alerted if common issues are found
 * Bug fixes
     * Bug where certain non-Castanet-compliant mapping reference headers would cause failure to generate consensus sequences
 

@@ -14,7 +14,8 @@ from app.utils.error_handlers import error_handler_api
 from app.utils.generate_probe_files import ProbeFileGen
 from app.utils.combine_batch_output import combine_output_csvs, combine_output_from_endpoint
 from app.utils.dependency_check import Dependencies
-from app.utils.mapping_ref_checks import check_mapping_refs
+from app.utils.mapping_ref_checks import check_mapping_ref
+from app.utils.concat_ont import ConcatOnt
 from app.src.preprocess import run_kraken
 from app.src.filter_keep_reads import FilterKeepReads
 from app.src.trim_adapters import run_trim
@@ -27,7 +28,7 @@ from app.src.post_filter import run_post_filter
 from app.utils.attempt_imports import import_test
 from app.utils.hash_files import check_infile_hashes
 from app.utils.cleanup import clean_intermediates
-from app.utils.api_classes import (Batch_eval_data, E2e_data, Preprocess_data, Filter_keep_reads_data, Amp_e2e_data,
+from app.utils.api_classes import (Batch_eval_data, E2e_data, Preprocess_data, Filter_keep_reads_data, Amp_e2e_data, Concat_ont_data,
                                    Trim_data, Mapping_data, Count_map_data, Analysis_data, Dep_check_data, Amplicon_data,
                                    Post_filter_data, Consensus_data, Convert_probe_data, Bam_workflow_data, Combine_output_data)
 
@@ -82,7 +83,7 @@ app = FastAPI(
 def process_payload(payload) -> dict:
     '''Parse payload and do initial input checks'''
     payload = jsonable_encoder(payload)
-    check_mapping_refs(payload["RefStem"])
+    check_mapping_ref(payload["RefStem"])
 
     if "NThreads" in payload.keys():
         if type(payload["NThreads"]) == str:
@@ -386,3 +387,12 @@ async def check_deps(payload: Dep_check_data) -> str:
         return clf.main()
     except Exception as ex:
         return error_handler_api(ex)
+
+
+@app.post("/concat_ont/", tags=["Convenience functions"])
+async def concat_ont_read_files(payload: Concat_ont_data) -> str:
+    payload = jsonable_encoder(payload)
+    clf = ConcatOnt(payload["InDir"], payload["OutDir"],
+                    payload["AllowedFormat"])
+    clf.main()
+    return "Task complete. See terminal output for details."
