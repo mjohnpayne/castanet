@@ -1,5 +1,5 @@
 import os
-from app.utils.shell_cmds import shell, stoperr
+from app.utils.shell_cmds import shell, stoperr, loginfo
 
 
 class ConcatOnt:
@@ -20,11 +20,11 @@ class ConcatOnt:
         if os.path.exists(self.out_dir):
             raise stoperr(
                 f"Output directory {self.out_dir} already exists. Please remove it or choose another output directory. This prevents you from overwriting your sequence data.")
-        else:
-            os.mkdir(self.out_dir)
+        os.mkdir(self.out_dir)
 
     def main(self):
         '''Iterate over subdirectories in input directory, concatenate all files with allowed_format in each subdirectory, write to output directory.'''
+        self.make_check_dirs()
         dirs = [i for i in os.listdir(self.in_dir) if os.path.isdir(
             os.path.join(self.in_dir, i))]
         for dir in dirs:
@@ -39,9 +39,5 @@ class ConcatOnt:
                 os.mkdir(new_subdir)
                 shell(f"cat {' '.join(files)} > {new_fname}")
                 print(f"Concatenated {len(files)} files into {new_fname}")
-
-
-if __name__ == "__main__":
-    clf = ConcatOnt("/mnt/h/datasets/ville_fibres_240925/",
-                    "/mnt/h/datasets/ville_fibres_concatenated_240925/", ".fastq.gz")
-    clf.main()
+        loginfo(
+            f"Finished concatenating files. Concatenated files are in {self.out_dir}.")
