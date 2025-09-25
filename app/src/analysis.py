@@ -242,12 +242,13 @@ class Analysis:
                 loginfo(
                     f'Mean amplification ratio for {probetype}: {amprate.mean()}')
 
-                # '''Save arrays as CSV''' # Deprecated as of v9.0
-                # with open(f'{odir}/{probetype}-{sampleid}_depth_by_pos.csv', 'a') as o:
-                #     np.savetxt(o, D, fmt='%d', newline=',')
-                #     o.write('\n')
-                #     np.savetxt(o, D1, fmt='%d', newline=',')
-                #     o.write('\n')
+                if self.a["DebugMode"]:
+                    '''Save arrays as CSV'''
+                    with open(f'{odir}/{probetype}-{sampleid}_depth_by_pos.csv', 'a') as o:
+                        np.savetxt(o, D, fmt='%d', newline=',')
+                        o.write('\n')
+                        np.savetxt(o, D1, fmt='%d', newline=',')
+                        o.write('\n')
 
                 '''Save array plots as pdf if significant'''
                 if D1.mean() >= 0.01:
@@ -450,7 +451,7 @@ class Analysis:
                 depth, on=['sampleid', 'probetype'], how='left')
             self.df.to_csv(
                 f'{self.output_dir}/{self.a["ExpName"]}_fullself.df.csv.gz', index=False, compression='gzip')
-            self.read_coverage_chart()
+        self.read_coverage_chart()
         self.read_dist_piechart()
         loginfo(
             f'Finished. Saved final data frame as {self.output_dir}/{self.a["ExpName"]}_fullself.df.csv.gz')

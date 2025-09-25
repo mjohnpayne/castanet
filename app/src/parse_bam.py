@@ -112,11 +112,9 @@ class Parse_bam_positions:
 
     def main(self):
         '''Entrypoint. Multi functional across generate counts and post filter.'''
-        # breakpoint()
-        # error_handler_parse_bam_positions(sys.argv)
         loginfo(f"Parsing BAM file {self.fnames['bam']}")
         dat, _ = self.get_reads()
-        if self.p['PostFilt']:  # RM < TODO CHECK EVALUATES AND NOT PASSING A STRING
+        if self.p['PostFilt']:
             loginfo(
                 f"Post filtering reads with less than {self.minimum_n_filter} reads")
             '''Filter data if < n reads (default = 1/no unique)'''
@@ -130,7 +128,6 @@ class Parse_bam_positions:
                  if len(v) <= self.minimum_n_filter]
             out = shell(
                 f"samtools view -@ {self.p['NThreads']} -b -N {self.fnames['delreads']} {self.fnames['bam']} > {self.fnames['bamfilt']}", is_test=True)
-            # TODO < Test output
             error_handler_cli(out, self.fnames['bamfilt'], "samtools")
             os.remove(self.fnames['bam'])
             os.rename(self.fnames['bamfilt'], self.fnames['bam'])

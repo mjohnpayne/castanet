@@ -22,6 +22,7 @@ conda install -y trimmomatic=0.39
 # Install mappers
 conda install -y bwa-mem2=2.2.1
 conda install -y bowtie2=2.5.4
+conda install -y minimap2=2.28
 
 # Install viral consensus tool
 conda install -y viral_consensus=0.0.5

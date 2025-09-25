@@ -29,7 +29,6 @@ def check_infile_hashes(payload, exp_dir):
                     open(f"{exp_dir}/hashes/{fname.split('/')[-1]}.p", "rb"))
         except:
             ...
-            # breakpoint()
             # stoperr(f"You're trying to run an experiment in a directory that already exists, but has no data hashes to compare against. "
             #         f"This is a safety feature to stop you from overwriting data. "
             #         f"Either change your save directory or delete the existing file.")

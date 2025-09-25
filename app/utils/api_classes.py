@@ -90,8 +90,8 @@ class Data_AnalysisExtras(BaseModel):
 
 
 class Data_MappingParameters(BaseModel):
-    Mapper: Literal["bwa", "bowtie2"] = Query("bwa",
-                                              description="Choose mapping software, options are 'bwa' for BWA-Mem2 or 'bowtie2'")
+    Mapper: Literal["bwa", "bowtie2", "minimap2"] = Query("bwa",
+                                                          description="Choose mapping software, options are 'bwa' for BWA-Mem2, 'bowtie2' or 'minimap2'. Default is 'bwa'.")
 
 
 class Data_ConsensusParameters(BaseModel):

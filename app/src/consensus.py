@@ -58,6 +58,7 @@ class Consensus:
                 self.naive_consensuses[tar_name] = self.naive_consensuses[coverage.iloc[0][0]]
                 self.naive_consensuses.pop(coverage.iloc[0][0])
         except:
+            # breakpoint() #######################
             stoperr(
                 f"Couldn't match consensus {tar_name} to read library. Have you tried to run this on a pre-existing data folder? Are you sure your mapping reference names are compatible with Castanet?")
 
@@ -215,8 +216,7 @@ class Consensus:
                 return ('', np.nan)
 
             try:
-                just_measured_bases = s[-int(len(s))
-                                             :].lower().replace("-", "").replace("n", "")
+                just_measured_bases = s[-int(len(s)):].lower().replace("-", "").replace("n", "")
                 consbase, consnum = Counter(
                     just_measured_bases).most_common()[0]
 
@@ -256,8 +256,10 @@ class Consensus:
     def filter_bam_to_organism(self, org_name) -> list:
         '''Output coverage stats for target consensuses'''
         probels = self.probe_names[self.probe_names['probetype']
-                                   == org_name]['orig_target_id'].tolist()
+                                   == org_name]['orig_target_id'].str.lower().tolist()
         coverage_df = self.coverage[self.coverage['#rname'].isin(probels)]
+        # if coverage_df.empty:
+        #     breakpoint()
         assert not coverage_df.empty, f"Call to samtools coverage returned empty output. Check that your bam file is indexed and that the path to it is correct."
 
         '''Get coverage for each consensus, filter collated bam by consensus coverage and map q'''

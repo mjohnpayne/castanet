@@ -13,7 +13,7 @@ def depth_csvs(fnames, out_fname):
             beeg_df = pd.concat([beeg_df, df])
         except:
             print(
-                f"Warning: Failed appending summary dataframe to batch csv: {fname}")
+                f"Warning: Failed appending depth summary dataframe to batch csv: {fname}")
             continue
     beeg_df.to_csv(out_fname.replace(".csv", "_depth.csv"))
 
@@ -27,7 +27,7 @@ def cov_csvs(fnames, out_fname):
             beeg_df = pd.concat([beeg_df, df])
         except:
             print(
-                f"Warning: Failed appending summary dataframe to batch csv: {fname}")
+                f"Warning: Failed appending coverage summary dataframe to batch csv: {fname}")
             continue
     beeg_df = beeg_df.reindex(sorted(beeg_df.columns), axis=1)
     beeg_df.to_csv(out_fname.replace(".csv", "_coverage.csv"))
