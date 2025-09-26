@@ -67,12 +67,12 @@ def run_map(p):
             f"INFO: Beginning initial mapping using Minimap2\nThis may take a while for large files")
 
         if p["SingleEndedReads"]:
-            shell(
-                f"minimap2 -ax map-ont {p['RefStem']} {in_files[0]} | samtools view -F4 -Sb - | samtools sort - 1> {p['SaveDir']}/{p['ExpName']}/{p['ExpName']}.bam")
+            out = shell(
+                f"minimap2 -ax map-ont {p['RefStem']} {in_files[0]} | samtools view -F4 -Sb - | samtools sort - 1> {p['SaveDir']}/{p['ExpName']}/{p['ExpName']}.bam",  is_test=True)
 
         else:
-            shell(
-                f"minimap2 -a {p['RefStem']} {in_files[0]} {in_files[1]} | samtools view -F4 -Sb - | samtools sort - 1> {p['SaveDir']}/{p['ExpName']}/{p['ExpName']}.bam")
+            out = shell(
+                f"minimap2 -a {p['RefStem']} {in_files[0]} {in_files[1]} | samtools view -F4 -Sb - | samtools sort - 1> {p['SaveDir']}/{p['ExpName']}/{p['ExpName']}.bam",  is_test=True)
 
         error_handler_cli(
             out, f"{p['SaveDir']}/{p['ExpName']}/{p['ExpName']}.bam", "minimap2", test_f_size=True)

@@ -85,7 +85,7 @@ def process_payload(payload) -> dict:
     payload = jsonable_encoder(payload)
     check_mapping_ref(payload["RefStem"])
 
-    if payload["SingleEndedReads"] and "Mapper" != "minimap2":
+    if payload["SingleEndedReads"] and payload["Mapper"] != "minimap2":
         logerr("WARNING: We strongly recommend using Minimap2 as your mapper for single ended reads. Proceeding anyway, but results may be suboptimal.")
 
     if "NThreads" in payload.keys():
