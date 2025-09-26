@@ -45,10 +45,12 @@ class Consensus:
         is_regex = False
         if len(tar_name) > 99:
             is_regex = True
-            tar_name = f"(^|\s){tar_name[0:100]}($|\s)"
+            match_name = f"(^|\s){tar_name[0:100]}($|\s)"
+        else:
+            match_name = tar_name
 
         coverage = self.coverage[self.coverage['#rname'].str.lower().str.contains(
-            tar_name, regex=is_regex)]  # Needs to be a regex with separate match in case mismatch on length
+            match_name, regex=is_regex)]  # Needs to be a regex with separate match in case mismatch on length
 
         if coverage.shape[0] > 1:
             coverage = coverage[coverage["#rname"] == tar_name[0:100]]
