@@ -172,6 +172,8 @@ def error_handler_cli(out, out_fname, tool, test_out_f=True, test_f_size=False):
 
 def get_cli_tool_errors(cli_tool):
     err_objs = {
+        "minimap2": {"healthy_msg": "use homopolymer-compressed k-mer",
+                     "guidance": "Minimap2 produced an empty BAM file. Check your Minimap2 installation and that your input reads are of sufficent quality. This might also indicate an out of memory error, if you're crunching a huge dataset: if so, rerun the experiment with less cores (NThreads parameter)."},
         "bowtie2": {"healthy_msg": "Total time for backward call",
                     "guidance": "bowtie2 produced an empty BAM file. Check your bowtie2 installation and that your input reads are of sufficent quality. This might also indicate an out of memory error, if you're crunching a huge dataset: if so, rerun the experiment with less cores (NThreads parameter)."},
         "kraken": {"healthy_msg": "loading database information",
