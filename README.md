@@ -27,7 +27,10 @@ Described in Mayne, R., Secret., S., Geoghegan, C., et al. (2024) Castanet: a pi
     * Utility function for concatenating all .fastq.gz files in a directory to a single, Castanet-compatible file
 * Mapping reference file checks are now completed at the start of each run, and users are alerted if common issues are found
 * Bug fixes
-    * Bug where certain non-Castanet-compliant mapping reference headers would cause failure to generate consensus sequences
+    * Non-Castanet-compliant mapping reference headers would cause failure to generate consensus sequences
+    * Using bowtie2 as mapper would create cosnensus sequences with unusual names
+    * Running multiple Castanet jobs in parallel via CLI could cause issues with re-indexing the refstem
+* Docker container updated with latest version
 
 # New in V9.0
 * Consensus algorithm enhancements to give more representative results with highly diverse/recombination-prone viruses

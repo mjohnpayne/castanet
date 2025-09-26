@@ -357,7 +357,7 @@ class Consensus:
             out_fname, f">{self.a['ExpName']}_{in_fname.split('/')[-1].split('_')[0]}_consensus_MinDepth{self.a['ConsensusMinD']}\n{''.join(cons['con'].tolist())}")
         save_fa(
             f"{self.a['folder_stem']}/consensus_sequences/{out_fname.split('/')[-1]}", f">{self.a['ExpName']}_{in_fname.split('/')[-1].split('_')[0]}_consensus_MinDepth{self.a['ConsensusMinD']}\n{''.join(cons['con'].tolist())}")
-        end_sec_print(
+        loginfo(
             f"INFO: Consensus sequence saved to {self.a['folder_stem']}/consensus_sequences/")
 
     def clean_incomplete_consensus(self) -> None:

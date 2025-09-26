@@ -1,5 +1,6 @@
 import os
 import pickle
+import shutil
 from app.utils.utility_fns import enumerate_read_files
 from app.utils.shell_cmds import shell
 from app.utils.system_messages import end_sec_print
@@ -7,12 +8,20 @@ from app.utils.shell_cmds import stoperr, logerr
 from app.utils.error_handlers import error_handler_cli
 
 
-def run_map(p):
+def run_map(p, is_test=False):
     '''Use BWA and Samtools to map reads from each sample to targets'''
     '''Default in_files are created by the trimming step'''
     in_files = [f"{p['SaveDir']}/{p['ExpName']}/{p['ExpName']}_1_clean.fastq",
                 f"{p['SaveDir']}/{p['ExpName']}/{p['ExpName']}_2_clean.fastq"]
     CLEAN_UP = True
+
+    if not is_test:
+        '''Move refstem to experiment folder'''
+        tmp_refstem = f"{p['SaveDir']}/{p['ExpName']}/ref.fa"
+        shutil.copy(p['RefStem'], tmp_refstem)
+        p['RefStem'] = tmp_refstem
+
+    '''Check input files exist and are non-empty'''
     for fn in in_files:
         '''If default infiles not present, look in ExpDir for user-specified ones'''
         if not os.path.exists(fn):
@@ -46,6 +55,10 @@ def run_map(p):
 
         error_handler_cli(
             out, f"{p['SaveDir']}/{p['ExpName']}/{p['ExpName']}.bam", "bwa-mem2", test_f_size=True)
+
+        if CLEAN_UP:
+            '''Remove mapping ref indices'''
+            shell(f"rm {p['SaveDir']}/{p['ExpName']}/ref.fa.*")
 
     elif p["Mapper"] == "bowtie2":
         end_sec_print(

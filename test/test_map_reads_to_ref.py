@@ -30,10 +30,10 @@ def init_run_map(do_preprocessing, fake_files=False):
         if fake_files:
             '''Fake input files should raise stoperr'''
             with pytest.raises(SystemError):
-                run_map(p)
+                run_map(p, is_test=True)
         else:
             '''Real files should lead to a real BAM file output'''
-            run_map(p)
+            run_map(p, is_test=True)
             assert os.stat(
                 f"{p['SaveDir']}/{p['ExpName']}/{p['ExpName']}.bam").st_size > 2
             if do_preprocessing:
