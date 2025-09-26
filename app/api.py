@@ -5,7 +5,7 @@ import logging
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
 
-from app.utils.shell_cmds import stoperr
+from app.utils.shell_cmds import stoperr, logerr
 from app.utils.timer import timing
 from app.utils.system_messages import banner, end_sec_print
 from app.utils.utility_fns import make_exp_dir, enumerate_read_files, read_fa
@@ -84,6 +84,9 @@ def process_payload(payload) -> dict:
     '''Parse payload and do initial input checks'''
     payload = jsonable_encoder(payload)
     check_mapping_ref(payload["RefStem"])
+
+    if payload["SingleEndedReads"] and "Mapper" != "minimap2":
+        logerr("WARNING: We strongly recommend using Minimap2 as your mapper for single ended reads. Proceeding anyway, but results may be suboptimal.")
 
     if "NThreads" in payload.keys():
         if type(payload["NThreads"]) == str:

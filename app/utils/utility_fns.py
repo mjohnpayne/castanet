@@ -84,7 +84,8 @@ def enumerate_read_files(exp_dir, single_ended_reads=False, batch_name=None):
     else:
         raise stoperr(
             f"I didn't find exactly 2 .fq/.fastq[.gz] read files in folder (ExpDir), so I'm skipping it: {exp_dir}.\n"
-            f"If you're using single ended reads (e.g. Nanopore), set the 'SingleEndedReads' parameter to 'true', and try again (see documentation for guidance).")
+            f"If you're using single ended reads (e.g. Nanopore), set the 'SingleEndedReads' parameter to 'true', and try again (see documentation for guidance)."
+            f"Castanet expects single ended reads in 1 file! Use the 'concat_ont' utility function in the API to concatenate multiple files if needed.")
 
 
 def enumerate_bam_files(exp_dir):

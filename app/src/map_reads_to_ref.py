@@ -74,7 +74,8 @@ def run_map(p):
             shell(
                 f"minimap2 -a {p['RefStem']} {in_files[0]} {in_files[1]} | samtools view -F4 -Sb - | samtools sort - 1> {p['SaveDir']}/{p['ExpName']}/{p['ExpName']}.bam")
 
-        # TODO ERROR HANDLER FOR MINIMAP
+        error_handler_cli(
+            out, f"{p['SaveDir']}/{p['ExpName']}/{p['ExpName']}.bam", "minimap2", test_f_size=True)
 
     else:
         stoperr(
