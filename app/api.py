@@ -155,6 +155,7 @@ def do_batch(payload, start_with_bam=False):
     payload["StartTime"] = st
     agg_analysis_csvs = []
     errs = []
+    original_exp_name = payload["ExpName"]
 
     if not start_with_bam:
         '''Standard end to end pipelines'''
@@ -196,7 +197,7 @@ def do_batch(payload, start_with_bam=False):
             end_sec_print(
                 f"REGISTERED ERROR {exp_name} WITH EXCEPTION: {err}")
     msg = combine_output_csvs(
-        agg_analysis_csvs,  f"{payload['SaveDir']}/{payload['ExpName']}.csv")
+        agg_analysis_csvs,  f"{payload['SaveDir']}/{original_exp_name}.csv")
     end_sec_print(msg)
     if len(errs) < 1:
         return f"***\nBatch complete. Time to complete: {time.time() - st} ({(time.time() - st)/len(SeqNames)} per sample)\n{msg}\nFailed to process following samples: {errs}***"
