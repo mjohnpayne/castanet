@@ -5,7 +5,7 @@ import logging
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
 
-from app.utils.shell_cmds import stoperr
+from app.utils.shell_cmds import stoperr, logerr
 from app.utils.timer import timing
 from app.utils.system_messages import banner, end_sec_print
 from app.utils.utility_fns import make_exp_dir, enumerate_read_files, read_fa
@@ -14,6 +14,8 @@ from app.utils.error_handlers import error_handler_api
 from app.utils.generate_probe_files import ProbeFileGen
 from app.utils.combine_batch_output import combine_output_csvs, combine_output_from_endpoint
 from app.utils.dependency_check import Dependencies
+from app.utils.mapping_ref_checks import check_mapping_ref
+from app.utils.concat_ont import ConcatOnt
 from app.src.preprocess import run_kraken
 from app.src.filter_keep_reads import FilterKeepReads
 from app.src.trim_adapters import run_trim
@@ -26,7 +28,7 @@ from app.src.post_filter import run_post_filter
 from app.utils.attempt_imports import import_test
 from app.utils.hash_files import check_infile_hashes
 from app.utils.cleanup import clean_intermediates
-from app.utils.api_classes import (Batch_eval_data, E2e_data, Preprocess_data, Filter_keep_reads_data, Amp_e2e_data,
+from app.utils.api_classes import (Batch_eval_data, E2e_data, Preprocess_data, Filter_keep_reads_data, Amp_e2e_data, Concat_ont_data,
                                    Trim_data, Mapping_data, Count_map_data, Analysis_data, Dep_check_data, Amplicon_data,
                                    Post_filter_data, Consensus_data, Convert_probe_data, Bam_workflow_data, Combine_output_data)
 
@@ -79,7 +81,19 @@ app = FastAPI(
 
 
 def process_payload(payload) -> dict:
+    '''Parse payload and do initial input checks'''
     payload = jsonable_encoder(payload)
+    check_mapping_ref(payload["RefStem"])
+
+    if "SingleEndedReads" in payload.keys():
+        if payload["SingleEndedReads"] and payload["Mapper"] != "minimap2":
+            logerr("WARNING: We strongly recommend using Minimap2 as your mapper for single ended reads. Proceeding anyway, but results may be suboptimal.")
+
+    for key in payload.keys():
+        if type(payload[key]) == str:
+            if " " in payload[key]:
+                stoperr(
+                    f"Your parameter {key} contains spaces. Please remove these and re-run.")
 
     if "NThreads" in payload.keys():
         if type(payload["NThreads"]) == str:
@@ -141,6 +155,7 @@ def do_batch(payload, start_with_bam=False):
     payload["StartTime"] = st
     agg_analysis_csvs = []
     errs = []
+    original_exp_name = payload["ExpName"]
 
     if not start_with_bam:
         '''Standard end to end pipelines'''
@@ -182,7 +197,7 @@ def do_batch(payload, start_with_bam=False):
             end_sec_print(
                 f"REGISTERED ERROR {exp_name} WITH EXCEPTION: {err}")
     msg = combine_output_csvs(
-        agg_analysis_csvs,  f"{payload['SaveDir']}/{payload['ExpName']}.csv")
+        agg_analysis_csvs,  f"{payload['SaveDir']}/{original_exp_name}.csv")
     end_sec_print(msg)
     if len(errs) < 1:
         return f"***\nBatch complete. Time to complete: {time.time() - st} ({(time.time() - st)/len(SeqNames)} per sample)\n{msg}\nFailed to process following samples: {errs}***"
@@ -383,3 +398,12 @@ async def check_deps(payload: Dep_check_data) -> str:
         return clf.main()
     except Exception as ex:
         return error_handler_api(ex)
+
+
+@app.post("/concat_ont/", tags=["Convenience functions"])
+async def concat_ont_read_files(payload: Concat_ont_data) -> str:
+    payload = jsonable_encoder(payload)
+    clf = ConcatOnt(payload["InDir"], payload["OutDir"],
+                    payload["AllowedFormat"])
+    clf.main()
+    return "Task complete. See terminal output for details."

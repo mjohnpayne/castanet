@@ -156,7 +156,7 @@ def error_handler_cli(out, out_fname, tool, test_out_f=True, test_f_size=False):
     if "command not found" in out.lower() or "segmentation fault" in out.lower() or not cli_specific_errs["healthy_msg"].lower() in out.lower():
         if out == "" and test_f_size:
             '''Don't fail here as it represents casting to an out file, which would have no response'''
-            ...
+            return
         else:
             stoperr(f"{tool} doesn't seem to be installed or threw an error not recognised by the Castanet test suite. Please check the Castanet readme for installation instructions. {default_guidance}"
                     f"{tool} output: {out}")
@@ -172,6 +172,8 @@ def error_handler_cli(out, out_fname, tool, test_out_f=True, test_f_size=False):
 
 def get_cli_tool_errors(cli_tool):
     err_objs = {
+        "minimap2": {"healthy_msg": "Real time:",
+                     "guidance": "Minimap2 produced an empty BAM file. Check your Minimap2 installation and that your input reads are of sufficent quality. This might also indicate an out of memory error, if you're crunching a huge dataset: if so, rerun the experiment with less cores (NThreads parameter)."},
         "bowtie2": {"healthy_msg": "Total time for backward call",
                     "guidance": "bowtie2 produced an empty BAM file. Check your bowtie2 installation and that your input reads are of sufficent quality. This might also indicate an out of memory error, if you're crunching a huge dataset: if so, rerun the experiment with less cores (NThreads parameter)."},
         "kraken": {"healthy_msg": "loading database information",
@@ -183,7 +185,7 @@ def get_cli_tool_errors(cli_tool):
         "trimmomatic_se": {"healthy_msg": "trimmomaticse: started with arguments",
                            "guidance": "Trimming produced empty files. Check your TrimMinLen parameter is not too short for your sequences and that Trimmomatic is isntalled (you may use the dependency_check endpoint to check your installation)."},
         "bwa-mem2": {"healthy_msg": "looking to launch executable",
-                     "guidance": f"BWA-MEM2 produced an empty BAM file. Check your BWA-MEM2 installation and that your input reads are of sufficent quality. This might also indicate an out of memory error, if you're crunching a huge dataset: if so, rerun the experiment with less cores (NThreads parameter)."},
+                     "guidance": f"BWA-MEM2 produced an empty BAM file. Check your BWA-MEM2 installation and that your input reads are of sufficent quality. This might also indicate an out of memory error, if you're crunching a huge dataset: if so, rerun the experiment with less cores (NThreads parameter). You can also get weird BWA errors if you have duplicate keys in your mapping ref."},
         "samtools": {"healthy_msg": "program: samtools",
                      "guidance": "Samtools produced an empty output file. Maybe your mapping reference doesn't correspond to any reads in your input data? If PostFilt is set to true, try setting to false and re-run."},
         "mafft": {"healthy_msg": "generating a scoring matrix for nucleotide",
