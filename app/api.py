@@ -89,6 +89,12 @@ def process_payload(payload) -> dict:
         if payload["SingleEndedReads"] and payload["Mapper"] != "minimap2":
             logerr("WARNING: We strongly recommend using Minimap2 as your mapper for single ended reads. Proceeding anyway, but results may be suboptimal.")
 
+    for key in payload.keys():
+        if type(payload[key]) == str:
+            if " " in payload[key]:
+                stoperr(
+                    f"Your parameter {key} contains spaces. Please remove these and re-run.")
+
     if "NThreads" in payload.keys():
         if type(payload["NThreads"]) == str:
             if payload["NThreads"] == "auto":

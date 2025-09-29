@@ -26,10 +26,13 @@ Described in Mayne, R., Secret., S., Geoghegan, C., et al. (2024) Castanet: a pi
     * Option to use Minimap2 as mapper
     * Utility function for concatenating all .fastq.gz files in a directory to a single, Castanet-compatible file
 * Mapping reference file checks are now completed at the start of each run, and users are alerted if common issues are found
+* Additional details from stderr written to terminal in errors
 * Bug fixes
     * Non-Castanet-compliant mapping reference headers would cause failure to generate consensus sequences
     * Using bowtie2 as mapper would create cosnensus sequences with unusual names
     * Running multiple Castanet jobs in parallel via CLI could cause issues with re-indexing the refstem
+    * Added error handling to prevent users from inserting non-printable characters in API arguments
+    * Summary statistics for batch runs now aggregate correctly in nested folders
 * Docker container updated with latest version
 
 # New in V9.0
