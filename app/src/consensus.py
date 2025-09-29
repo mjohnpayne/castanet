@@ -41,17 +41,19 @@ class Consensus:
     def filter_bam(self, tar_name) -> None:
         '''Filter bam to specific target, call consensus sequence for sam alignment records, grouped by target'''
         loginfo(f"Calling consensuses on all targets for: {tar_name}")
-        match_str = f"{tar_name}".lower()
+        tar_name = tar_name.lower()
         is_regex = False
         if len(tar_name) > 99:
             is_regex = True
-            match_str = f"(^|\s){match_str[0:100]}($|\s)"
+            match_name = f"(^|\s){tar_name[0:100]}($|\s)"
+        else:
+            match_name = tar_name
 
         coverage = self.coverage[self.coverage['#rname'].str.lower().str.contains(
-            match_str, regex=is_regex)]  # Needs to be a regex with separate match in case mismatch on length
+            match_name, regex=is_regex)]  # Needs to be a regex with separate match in case mismatch on length
 
         if coverage.shape[0] > 1:
-            coverage = coverage[coverage["#rname"] == tar_name.lower()[0:100]]
+            coverage = coverage[coverage["#rname"] == tar_name[0:100]]
 
         try:
             if tar_name != coverage.iloc[0][0]:
@@ -256,7 +258,7 @@ class Consensus:
     def filter_bam_to_organism(self, org_name) -> list:
         '''Output coverage stats for target consensuses'''
         probels = self.probe_names[self.probe_names['probetype']
-                                   == org_name]['orig_target_id'].tolist()
+                                   == org_name]['orig_target_id'].str.lower().tolist()
         coverage_df = self.coverage[self.coverage['#rname'].isin(probels)]
         assert not coverage_df.empty, f"Call to samtools coverage returned empty output. Check that your bam file is indexed and that the path to it is correct."
 
@@ -355,7 +357,7 @@ class Consensus:
             out_fname, f">{self.a['ExpName']}_{in_fname.split('/')[-1].split('_')[0]}_consensus_MinDepth{self.a['ConsensusMinD']}\n{''.join(cons['con'].tolist())}")
         save_fa(
             f"{self.a['folder_stem']}/consensus_sequences/{out_fname.split('/')[-1]}", f">{self.a['ExpName']}_{in_fname.split('/')[-1].split('_')[0]}_consensus_MinDepth{self.a['ConsensusMinD']}\n{''.join(cons['con'].tolist())}")
-        end_sec_print(
+        loginfo(
             f"INFO: Consensus sequence saved to {self.a['folder_stem']}/consensus_sequences/")
 
     def clean_incomplete_consensus(self) -> None:

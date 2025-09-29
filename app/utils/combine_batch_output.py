@@ -11,23 +11,29 @@ def depth_csvs(fnames, out_fname):
             df = pd.read_csv(fname, index_col=0)
             df["sample"] = fname.split("/")[-1].split("_")[0]
             beeg_df = pd.concat([beeg_df, df])
-        except:
+        except Exception as e:
+            if e == FileNotFoundError:
+                f"File not found. This might be because you didn't have any hits in your sample with the mapping ref you supplied"
             print(
-                f"Warning: Failed appending summary dataframe to batch csv: {fname}")
+                f"Warning: Failed appending depth summary dataframe to batch csv: {fname}"
+                f"Reason: {e}")
             continue
     beeg_df.to_csv(out_fname.replace(".csv", "_depth.csv"))
 
 
 def cov_csvs(fnames, out_fname):
-    beeg_df = pd.DataFrame()  # TODO This really should be one function.
+    beeg_df = pd.DataFrame()  # RM TODO << This really should be one function.
     for fname in fnames:
         try:
             df = pd.read_csv(fname.replace("_depth", "_coverage"), index_col=0)
             df["sample"] = fname.split("/")[-1].split("_")[0]
             beeg_df = pd.concat([beeg_df, df])
-        except:
+        except Exception as e:
+            if e == FileNotFoundError:
+                f"File not found. This might be because you didn't have any hits in your sample with the mapping ref you supplied"
             print(
-                f"Warning: Failed appending summary dataframe to batch csv: {fname}")
+                f"Warning: Failed appending coverage summary dataframe to batch csv: {fname}"
+                f"Reason: {e}")
             continue
     beeg_df = beeg_df.reindex(sorted(beeg_df.columns), axis=1)
     beeg_df.to_csv(out_fname.replace(".csv", "_coverage.csv"))
