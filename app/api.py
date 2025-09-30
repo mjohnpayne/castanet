@@ -28,9 +28,10 @@ from app.src.post_filter import run_post_filter
 from app.utils.attempt_imports import import_test
 from app.utils.hash_files import check_infile_hashes
 from app.utils.cleanup import clean_intermediates
+from app.utils.mapping_ref_convert import main as convert_mapping_ref
 from app.utils.api_classes import (Batch_eval_data, E2e_data, Preprocess_data, Filter_keep_reads_data, Amp_e2e_data, Concat_ont_data,
                                    Trim_data, Mapping_data, Count_map_data, Analysis_data, Dep_check_data, Amplicon_data,
-                                   Post_filter_data, Consensus_data, Convert_probe_data, Bam_workflow_data, Combine_output_data)
+                                   Post_filter_data, Consensus_data, Convert_probe_data, Bam_workflow_data, Combine_output_data, Convert_mapping_ref_data)
 
 logger = logging.getLogger('uvicorn.error')
 logger.setLevel(logging.DEBUG)
@@ -377,11 +378,12 @@ def run_amplicons(payload) -> None:
 
 
 @app.post("/convert_mapping_reference/", tags=["Convenience functions"])
-async def convertprobes(payload: Convert_probe_data) -> str:
+async def convertprobes(payload: Convert_mapping_ref_data) -> str:
     payload = jsonable_encoder(payload)
-    clf = ProbeFileGen(payload)
-    clf.main()
-    return f"Task complete. Output saved to: {payload['OutFolder']}/{payload['OutFileName']}.fasta / .csv."
+    status = convert_mapping_ref(payload)
+    # clf = ProbeFileGen(payload)
+    # clf.main()
+    return status
 
 
 @app.post("/combine_analytical_output/", tags=["Convenience functions"])

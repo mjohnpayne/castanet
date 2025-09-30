@@ -136,6 +136,13 @@ class Concat_ont_data(BaseModel):
                                description="File format to search for and concatenate. Default is .fastq.gz.")
 
 
+class Convert_mapping_ref_data(BaseModel):
+    InFile: str = Query("./my_mapping_ref.csv",
+                        description="Path to input CSV or FASTA mapping reference description file to be converted to a Castanet-compatible RefStem.")
+    OutFile: str = Query("./my_mapping_ref_converted.fasta",
+                         description="Output file name for converted mapping reference, in FASTA format. A CSV file with the same name but .csv extension will also be generated.")
+
+
 '''Endpoint objects'''
 
 

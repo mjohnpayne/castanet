@@ -54,8 +54,9 @@ def save_output(df, fasta, out_fpath) -> None:
     df.to_csv(f"{out_fpath.replace('.fasta', '.csv')}", index=False)
 
 
-def main(in_file, out_file):
+def main(payload):
     '''Convert an input CSV or FASTA mapping reference description file to a Castanet-compatible RefStem'''
+    in_file, out_file = payload["InFile"], payload["OutFile"]
     loginfo(f"Converting mapping reference file: {in_file}")
     if in_file.endswith(".csv"):
         df = parse_csv(in_file)
@@ -71,11 +72,3 @@ def main(in_file, out_file):
     complete_msg = f"Conversion complete! Output saved to: {out_file} and {out_file.replace('.fasta', '.csv')}"
     loginfo(complete_msg)
     return complete_msg
-
-
-if __name__ == "__main__":
-    in_file = "test_mapping_ref.csv"
-    # in_file = "test_mapping_ref_converted.fasta"
-    out_file = "test_mapping_ref_converted.fasta"
-
-    _ = main(in_file, out_file)
