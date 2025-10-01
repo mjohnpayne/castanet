@@ -28,7 +28,7 @@ class Analysis:
             self.a["input_file"] = f"{self.output_dir}/{self.a['ExpName']}_PosCounts.csv"
         self.df = error_handler_analysis(self.a)
         self.df["target_id"] = self.df["target_id"].str.lower()
-        self.lut = pd.read_csv("2025_panel_test.csv")
+        self.lut = pd.read_csv(self.a["MappingRefTable"], index_col=False)
 
     def add_probelength(self):
         '''Add length of target_id to each row of master df after splitting probelength data.'''

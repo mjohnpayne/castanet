@@ -28,7 +28,7 @@ from app.src.post_filter import run_post_filter
 from app.utils.attempt_imports import import_test
 from app.utils.hash_files import check_infile_hashes
 from app.utils.cleanup import clean_intermediates
-from app.utils.mapping_ref_convert import main as convert_mapping_ref
+from app.utils.mapping_ref_convert import MappingRefConverter
 from app.utils.api_classes import (Batch_eval_data, E2e_data, Preprocess_data, Filter_keep_reads_data, Amp_e2e_data, Concat_ont_data,
                                    Trim_data, Mapping_data, Count_map_data, Analysis_data, Dep_check_data, Amplicon_data,
                                    Post_filter_data, Consensus_data, Convert_probe_data, Bam_workflow_data, Combine_output_data, Convert_mapping_ref_data)
@@ -65,7 +65,7 @@ banner()
 
 app = FastAPI(
     title="Castanet",
-    version="9.0",
+    version="9.1",
     description=description,
     contact={
         "name": "Nuffield Department of Medicine, University of Oxford",
@@ -84,7 +84,16 @@ app = FastAPI(
 def process_payload(payload) -> dict:
     '''Parse payload and do initial input checks'''
     payload = jsonable_encoder(payload)
-    check_mapping_ref(payload["RefStem"])
+    # if payload["MappingRefTable"] == "":
+    #     import shutil
+    #     check_mapping_ref(payload["RefStem"])
+    #     tmp_refstem = f"{payload['SaveDir']}/{payload['ExpName']}/ref.fa"
+    #     shutil.copy(payload['RefStem'], tmp_refstem)
+    #     payload['RefStem'] = tmp_refstem
+
+    # else:
+    clf = MappingRefConverter(payload, sneaky_mode=True)
+    payload = clf.main()
 
     if "SingleEndedReads" in payload.keys():
         if payload["SingleEndedReads"] and payload["Mapper"] != "minimap2":
@@ -380,9 +389,8 @@ def run_amplicons(payload) -> None:
 @app.post("/convert_mapping_reference/", tags=["Convenience functions"])
 async def convertprobes(payload: Convert_mapping_ref_data) -> str:
     payload = jsonable_encoder(payload)
-    status = convert_mapping_ref(payload)
-    # clf = ProbeFileGen(payload)
-    # clf.main()
+    clf = MappingRefConverter(payload, sneaky_mode=False)
+    status = clf.main()
     return status
 
 

@@ -38,7 +38,7 @@ class Consensus:
         if start_with_bam:
             self.fnames['master_bam'] = f"{self.a['ExpDir']}/{[i for i in os.listdir(self.a['ExpDir']) if i[-4:] == '.bam'][0]}"
         self.eval_stats, self.naive_consensuses, self.coverage = {}, {}, None
-        self.lut = pd.read_csv("2025_panel_test.csv")
+        self.lut = pd.read_csv(self.a["MappingRefTable"], index_col=False)
         make_dir(f"{self.a['folder_stem']}consensus_data/")
         make_dir(f"{self.a['folder_stem']}consensus_sequences/")
 
@@ -225,7 +225,8 @@ class Consensus:
                 return ('', np.nan)
 
             try:
-                just_measured_bases = s[-int(len(s)):].lower().replace("-", "").replace("n", "")
+                just_measured_bases = s[-int(len(s))
+                                             :].lower().replace("-", "").replace("n", "")
                 consbase, consnum = Counter(
                     just_measured_bases).most_common()[0]
 

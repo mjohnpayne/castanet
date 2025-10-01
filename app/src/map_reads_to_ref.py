@@ -15,11 +15,11 @@ def run_map(p, is_test=False):
                 f"{p['SaveDir']}/{p['ExpName']}/{p['ExpName']}_2_clean.fastq"]
     CLEAN_UP = True
 
-    if not is_test:
-        '''Move refstem to experiment folder'''
-        tmp_refstem = f"{p['SaveDir']}/{p['ExpName']}/ref.fa"
-        shutil.copy(p['RefStem'], tmp_refstem)
-        p['RefStem'] = tmp_refstem
+    # if not is_test: # TODO < Deprecated since 9.1.0
+    #     '''Move refstem to experiment folder'''
+    #     tmp_refstem = f"{p['SaveDir']}/{p['ExpName']}/ref.fa"
+    #     shutil.copy(p['RefStem'], tmp_refstem)
+    #     p['RefStem'] = tmp_refstem
 
     '''Check input files exist and are non-empty'''
     for fn in in_files:
