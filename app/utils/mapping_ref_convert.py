@@ -11,13 +11,12 @@ def parse_csv(fpath) -> pd.DataFrame:
 
 def make_csv(fpath) -> pd.DataFrame:
     fastas = read_fa(fpath)
-    agg_headers, descriptions, seqs = [], [], []
+    agg_headers, descriptions = [], []
     for fasta in fastas:
         agg_headers.append(fasta[0].split("_")[0].replace(">", ""))
         descriptions.append("_".join(fasta[0].split("_")[1:]))
-        seqs.append(fasta[1])
     df = pd.DataFrame({"aggregate_to": agg_headers,
-                      "description": descriptions, "sequence": seqs})
+                      "description": descriptions})
     return df
 
 

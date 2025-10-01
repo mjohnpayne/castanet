@@ -77,9 +77,11 @@ class Analysis:
         self.df["target_id"] = self.df.apply(
             lambda x: fix_rmlst(x), axis=1)
 
-        pdf['genename'] = pdf.target_id.apply(
-            lambda x: x.replace('_', '-').split('-')[0])
-        pdf['genename'] = pdf['genename'].str.lower()
+        # pdf['genename'] = pdf.target_id.apply( ###################################################
+        #     lambda x: x.replace('_', '-').split('-')[0])
+        pdf['genename'] = pdf.target_id.str.lower().apply(
+            lambda x: x.split("_")[0])
+        # pdf['genename'] = pdf['genename'].str.lower()
 
         pdf["genename"] = pdf.apply(lambda x: x["genename"].lower(), axis=1)
         '''More precise definition for the different virus types'''
