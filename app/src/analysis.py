@@ -28,6 +28,7 @@ class Analysis:
             self.a["input_file"] = f"{self.output_dir}/{self.a['ExpName']}_PosCounts.csv"
         self.df = error_handler_analysis(self.a)
         self.df["target_id"] = self.df["target_id"].str.lower()
+        self.lut = pd.read_csv("2025_panel_test.csv")
 
     def add_probelength(self):
         '''Add length of target_id to each row of master df after splitting probelength data.'''
@@ -195,7 +196,7 @@ class Analysis:
                     f'Cannot create output directory {odir} for saving depth information. Proceeding with current working directory.')
 
             loginfo(
-                'INFO: Calculating read depth statistics for all probes, for all samples. This is a slow step.')
+                'INFO: Calculating read depth statistics for all probes, for all samples.')
             for (sampleid, probetype), g in self.df.groupby(['sampleid', 'probetype']):
                 gene_list = g.genename.unique()
                 n_genes = len(gene_list)
@@ -208,7 +209,13 @@ class Analysis:
                     D = np.zeros(int(gg.target_len.max()), dtype=np.uint32)
                     D1 = np.zeros(D.shape, dtype=np.uint32)
                     for target_id, gt in gg.groupby('target_id'):
-                        loginfo(f'..... target: {target_id[:100]}.')
+                        try:
+                            '''Don't give the user the hashed header name, it will only upset them'''
+                            sneaky_name = f'{target_id.split("_")[0]}_{self.lut[self.lut["key"] == target_id.split("_")[-1]]["description"].item()[0:100]}'
+                        except TypeError:
+                            '''If user has somehow broken fasta header'''
+                            sneaky_name = f'{target_id.split("_")[0]}'
+                        loginfo(f'..... target: {sneaky_name}.')
                         for _, row in gt.iterrows():
                             D[row.startpos-1:row.startpos-1+row.maplen] += row.n
                             D1[row.startpos-1:row.startpos-1+row.maplen] += 1

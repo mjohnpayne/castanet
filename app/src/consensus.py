@@ -38,12 +38,19 @@ class Consensus:
         if start_with_bam:
             self.fnames['master_bam'] = f"{self.a['ExpDir']}/{[i for i in os.listdir(self.a['ExpDir']) if i[-4:] == '.bam'][0]}"
         self.eval_stats, self.naive_consensuses, self.coverage = {}, {}, None
+        self.lut = pd.read_csv("2025_panel_test.csv")
         make_dir(f"{self.a['folder_stem']}consensus_data/")
         make_dir(f"{self.a['folder_stem']}consensus_sequences/")
 
     def filter_bam(self, tar_name) -> None:
         '''Filter bam to specific target, call consensus sequence for sam alignment records, grouped by target'''
-        loginfo(f"Calling subconsensus for target: {tar_name}")
+        try:
+            '''Don't give the user the hashed header name, it will only upset them'''
+            sneaky_name = f'{tar_name.split("_")[0]}_{self.lut[self.lut["key"] == tar_name.split("_")[-1]]["description"].item()[0:100]}'
+        except TypeError:
+            '''If user has somehow broken fasta header'''
+            sneaky_name = f'{tar_name.split("_")[0]}'
+        loginfo(f"Calling subconsensus for target: {sneaky_name}")
         tar_name = tar_name.lower()
         is_regex = False
         if len(tar_name) > 99:
@@ -64,16 +71,16 @@ class Consensus:
                 self.naive_consensuses.pop(coverage.iloc[0][0])
         except:
             stoperr(
-                f"Couldn't match consensus {tar_name} to read library. Have you tried to run this on a pre-existing data folder? Are you sure your mapping reference names are compatible with Castanet?")
+                f"Couldn't match consensus {sneaky_name} to read library. Have you tried to run this on a pre-existing data folder? Are you sure your mapping reference names are compatible with Castanet?")
 
         if coverage.empty:
             raise loginfo(
-                f"Could not generate a consensus for target: {tar_name}\nCheck your probe names correspond to the target names in your bam file. It's possible your probe naming scheme is incompatible with castanet.")
+                f"Could not generate a consensus for target: {sneaky_name}\nCheck your probe names correspond to the target names in your bam file. It's possible your probe naming scheme is incompatible with castanet.")
 
         if float(coverage['meanmapq'].item()) < self.a["ConsensusMapQ"]:
             '''If coverage/depth don't surpass threshold, delete grouped reads dir'''
             loginfo(
-                f"Not adding subconsensus for {tar_name} to consensus for organism, Map Q was under minimmum threshold you set ({coverage['meanmapq'].item()})")
+                f"Not adding subconsensus for {sneaky_name} to consensus for organism, Map Q was under minimmum threshold you set ({coverage['meanmapq'].item()})")
             return
         else:
             '''Else, call consensus on this target'''
@@ -218,7 +225,7 @@ class Consensus:
                 return ('', np.nan)
 
             try:
-                just_measured_bases = s[-int(len(s))                                        :].lower().replace("-", "").replace("n", "")
+                just_measured_bases = s[-int(len(s)):].lower().replace("-", "").replace("n", "")
                 consbase, consnum = Counter(
                     just_measured_bases).most_common()[0]
 
