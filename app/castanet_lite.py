@@ -11,6 +11,7 @@ def defaults():
         "ExpName": "CastanetTest",
         "SaveDir": "./experiments",
         "RefStem": "data/eval/ref.fa",
+        "MappingRefTable": "",
         "Mapper": "bwa",
         "SingleEndedReads": False,
         "MatchLength": 40,

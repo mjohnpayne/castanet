@@ -84,16 +84,6 @@ app = FastAPI(
 def process_payload(payload) -> dict:
     '''Parse payload and do initial input checks'''
     payload = jsonable_encoder(payload)
-    # if payload["MappingRefTable"] == "":
-    #     import shutil
-    #     check_mapping_ref(payload["RefStem"])
-    #     tmp_refstem = f"{payload['SaveDir']}/{payload['ExpName']}/ref.fa"
-    #     shutil.copy(payload['RefStem'], tmp_refstem)
-    #     payload['RefStem'] = tmp_refstem
-
-    # else:
-    clf = MappingRefConverter(payload, sneaky_mode=True)
-    payload = clf.main()
 
     if "SingleEndedReads" in payload.keys():
         if payload["SingleEndedReads"] and payload["Mapper"] != "minimap2":
@@ -140,7 +130,11 @@ def process_payload(payload) -> dict:
             stoperr(
                 f"NThreads parameter should either be an integer, or 'auto' or 'hpc'.")
 
+    '''Make directories and copies of mapping ref fasta/table'''
     write_input_params(payload)
+    clf = MappingRefConverter(payload, sneaky_mode=True)
+    payload = clf.main()
+
     return payload
 
 
