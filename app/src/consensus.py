@@ -8,7 +8,7 @@ from collections import Counter
 import plotly.express as px
 
 from app.utils.timer import timing
-from app.utils.shell_cmds import shell, make_dir, loginfo, stoperr
+from app.utils.shell_cmds import shell, make_dir, loginfo, stoperr, logerr
 from app.utils.utility_fns import read_fa, save_fa
 from app.utils.fnames import get_consensus_fnames
 from app.utils.system_messages import end_sec_print
@@ -32,15 +32,25 @@ class Consensus:
         self.probe_names = pd.read_csv(
             f"{self.a['SaveDir']}/{self.a['ExpName']}/probe_aggregation.csv")
         self.fnames = get_consensus_fnames(self.a)
+        self.grouped_reads = p.load(open(self.fnames["grouped_reads"], "rb"))
+        self.grouped_reads_keep = {}
+        self.subconsensuses = {}
         if start_with_bam:
             self.fnames['master_bam'] = f"{self.a['ExpDir']}/{[i for i in os.listdir(self.a['ExpDir']) if i[-4:] == '.bam'][0]}"
         self.eval_stats, self.naive_consensuses, self.coverage = {}, {}, None
+        self.lut = pd.read_csv(self.a["MappingRefTable"], index_col=False)
         make_dir(f"{self.a['folder_stem']}consensus_data/")
         make_dir(f"{self.a['folder_stem']}consensus_sequences/")
 
     def filter_bam(self, tar_name) -> None:
         '''Filter bam to specific target, call consensus sequence for sam alignment records, grouped by target'''
-        loginfo(f"Calling consensuses on all targets for: {tar_name}")
+        try:
+            '''Don't give the user the hashed header name, it will only upset them'''
+            sneaky_name = f'{tar_name.split("_")[0]}_{self.lut[self.lut["key"] == tar_name.split("_")[-1]]["description"].item()[0:100]}'
+        except TypeError:
+            '''If user has somehow broken fasta header'''
+            sneaky_name = f'{tar_name.split("_")[0]}'
+        loginfo(f"Calling subconsensus for target: {sneaky_name}")
         tar_name = tar_name.lower()
         is_regex = False
         if len(tar_name) > 99:
@@ -61,31 +71,29 @@ class Consensus:
                 self.naive_consensuses.pop(coverage.iloc[0][0])
         except:
             stoperr(
-                f"Couldn't match consensus {tar_name} to read library. Have you tried to run this on a pre-existing data folder? Are you sure your mapping reference names are compatible with Castanet?")
+                f"Couldn't match consensus {sneaky_name} to read library. Have you tried to run this on a pre-existing data folder? Are you sure your mapping reference names are compatible with Castanet?")
 
         if coverage.empty:
             raise loginfo(
-                f"Could not generate a consensus for target: {tar_name}\nCheck your probe names correspond to the target names in your bam file. It's possible your probe naming scheme is incompatible with castanet.")
+                f"Could not generate a consensus for target: {sneaky_name}\nCheck your probe names correspond to the target names in your bam file. It's possible your probe naming scheme is incompatible with castanet.")
 
         if float(coverage['meanmapq'].item()) < self.a["ConsensusMapQ"]:
             '''If coverage/depth don't surpass threshold, delete grouped reads dir'''
             loginfo(
-                f"Not adding subconsensus for {tar_name} to consensus for organism, Map Q was under minimmum threshold you set ({coverage['meanmapq'].item()})")
-            shell(f"rm -r '{self.a['folder_stem']}grouped_reads/{tar_name}/'")
+                f"Not adding subconsensus for {sneaky_name} to consensus for organism, Map Q was under minimmum threshold you set ({coverage['meanmapq'].item()})")
             return
         else:
             '''Else, call consensus on this target'''
-            with open(f"{self.a['folder_stem']}grouped_reads/{tar_name}/consensus_seqs_{tar_name}.fasta", "w") as f:
-                f.write(
-                    f">{tar_name}\n{self.naive_consensuses[tar_name]}\n")
+            if not tar_name in self.subconsensuses.keys():
+                self.subconsensuses[tar_name] = []
+            self.subconsensuses[tar_name].append(
+                f"{self.naive_consensuses[tar_name]}")
 
     def collate_consensus_seqs(self, tar_name) -> None:
         '''Read and collate consensus seqs from per target to per organism'''
         try:
-            seqs_and_refs = [i for i in read_fa(
-                f"{self.a['folder_stem']}grouped_reads/{tar_name}/consensus_seqs_{tar_name}.fasta") if tar_name in i[0]]
             seqs_and_refs = [[self.aggregate_to_probename(
-                i[0]), i[0], i[1]] for i in seqs_and_refs]    # aggn, refn, seq
+                tar_name), tar_name, i] for i in self.subconsensuses[tar_name]]    # aggn, refn, seq
         except Exception as ex:
             print(f"***{ex}")
             return
@@ -106,7 +114,7 @@ class Consensus:
     def aggregate_to_probename(self, ref) -> str:
         '''Group targets to organism via probe name (compiled in analysis.py)'''
         match = self.probe_names.iloc[np.where(
-            np.isin(self.probe_names["orig_target_id"], ref.replace(">", "")))[0]]
+            np.isin(self.probe_names["orig_target_id"].str.lower(), ref[0:100].replace(">", "")))[0]]  # TODO < Curtailment
         if match.empty:
             print(
                 f"WARNING: Couldn't match reads to probe name: {self.probe_names['target_id']}")
@@ -167,7 +175,7 @@ class Consensus:
         with open(self.fnames['flat_cons_refs'], "w") as f:
             [f.write(f"{i[0]}\n{i[1]}\n") for i in ref_seqs]
         with open(self.fnames['flat_cons_seqs'], "w") as f:
-            [f.write(f"{i['tar_name']}_CONS\n{i['consensus_seq']}\n")
+            [f.write(f">{i['tar_name']}_CONS\n{i['consensus_seq']}\n")
              for i in self.target_consensuses[org_name]]
         shell(
             f"cat {self.fnames['flat_cons_seqs']} {self.fnames['flat_cons_refs']} > {self.a['folder_stem']}/consensus_data/unaligned_consensuses_and_refs.fna")
@@ -372,8 +380,9 @@ class Consensus:
         '''Remove intermediate files to save disc space'''
         rm(f"{self.fnames['collated_reads_fastq']}")
         rm(f"{self.fnames['temp_folder']}", "-r")
-        find_and_delete(
-            f"{self.a['folder_stem']}grouped_reads/", "*.bam")
+        # rm(f"{self.fnames['grouped_reads']}") # RM < TODO Unclear if this should be cleared only on debug = False??
+        # find_and_delete(
+        #     f"{self.a['folder_stem']}grouped_reads/", "*.bam")
 
     def generate_summary(self, org) -> None:
         dfpath = f"{self.a['folder_stem']}/consensus_seq_stats.csv"
@@ -386,7 +395,7 @@ class Consensus:
 
         '''remapped cons stats'''
         c_df = pd.read_csv(
-            f"{self.a['folder_stem']}/consensus_data/{org}/{org}_consensus_pos_counts.csv")  # TODO < does this need sep \t?
+            f"{self.a['folder_stem']}/consensus_data/{org}/{org}_consensus_pos_counts.csv")
         gc = round((c_df["G"].sum() + c_df["C"].sum()) /
                    c_df["Total"].sum() * 100, 2)
 
@@ -397,15 +406,19 @@ class Consensus:
             (1 - ((missing + ambigs) / c_df["Total"].sum())) * 100, 2)
 
         '''Get additional stats on consensus remapping'''
-        additional_stats = {}
-        with open(f"{self.a['folder_stem']}/consensus_data/{org}/supplementary_stats.p", 'rb') as f:
-            additional_stats["n_remapped_seqs"] = p.load(
-                f)["filtered_collated_read_num"]
+        try:
+            additional_stats = {}
+            with open(f"{self.a['folder_stem']}/consensus_data/{org}/supplementary_stats.p", 'rb') as f:
+                additional_stats["n_remapped_seqs"] = p.load(
+                    f)["filtered_collated_read_num"]
 
-        c_stats = pd.DataFrame([[org, c_df["Total"].sum(
-        ), additional_stats['n_remapped_seqs'], gc, missing, ambigs, coverage]], columns=cols)
-        df = pd.concat([df, c_stats], axis=0, ignore_index=True)
-        df.to_csv(dfpath)
+            c_stats = pd.DataFrame([[org, c_df["Total"].sum(
+            ), additional_stats['n_remapped_seqs'], gc, missing, ambigs, coverage]], columns=cols)
+            df = pd.concat([df, c_stats], axis=0, ignore_index=True)
+            df.to_csv(dfpath)
+        except FileNotFoundError:
+            logerr(f"Couldn't find supplementary stats for {org}, skipping addition of remapped read count to summary csv."
+                   f"This can happen if individual pipeline stages are run out-of-synch with each other.")
 
         if self.a["DebugMode"]:
             '''Plot consensus coverage'''
@@ -422,7 +435,7 @@ class Consensus:
 
         '''Get consensus and coverage for each target, memoize'''
         out = shell("samtools", is_test=True)
-        shell(  # TODO < Check if quicker in loop?
+        shell(  # Quicker all in one than out of loop
             f"""samtools consensus -@ {self.a['NThreads']} --min-depth {self.a["ConsensusMinD"]} -f fasta '{self.fnames['master_bam']}' -o '{group_consensus_fname}'""")
         error_handler_cli(out, group_consensus_fname,
                           "samtools", test_out_f=True, test_f_size=True)
@@ -442,16 +455,19 @@ class Consensus:
         )), sep="\t")
         assert not self.coverage.empty, "Call to samtools coverage returned empty output. Check that your bam file is indexed and that the path to it is correct."
         self.coverage["#rname"] = self.coverage.apply(
-            lambda x: x["#rname"][0:100].lower(), axis=1)  # Truncate to 100 chars
+            lambda x: x["#rname"][0:100].lower(), axis=1)  # TODO < Curtailment
 
-        for tar_name in os.listdir(f"{self.a['folder_stem']}grouped_reads/"):
-            self.filter_bam(tar_name)
+        for key in self.grouped_reads.keys():
+            self.filter_bam(key)
+        self.grouped_reads.clear()
 
         '''Consensus for each thing target group'''
-        [self.collate_consensus_seqs(tar_name) for tar_name in os.listdir(
-            f"{self.a['folder_stem']}/grouped_reads/") if "BACT" not in tar_name]
+        [self.collate_consensus_seqs(tar_name)
+            for tar_name in self.subconsensuses.keys() if "BACT" not in tar_name]
+        self.subconsensuses.clear()
         [self.call_flat_consensus(
             i) for i in self.target_consensuses.keys() if i != "Unmatched"]
+
         '''Tidy up'''
         self.clean_incomplete_consensus()
         self.tidy()

@@ -5,6 +5,7 @@ import pandas as pd
 
 class ProbeFileGen:
     '''
+    DEPRECATED AS OF 9.1.0
     Reads in all FASTA files in a folder, cleans headers, joins seqs and QC's
     file. Generates probe length file, then saves unified probes. Header format:
     >Species_[some unique string, no whitespace]-[…description, optional…]

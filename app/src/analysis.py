@@ -28,6 +28,7 @@ class Analysis:
             self.a["input_file"] = f"{self.output_dir}/{self.a['ExpName']}_PosCounts.csv"
         self.df = error_handler_analysis(self.a)
         self.df["target_id"] = self.df["target_id"].str.lower()
+        self.lut = pd.read_csv(self.a["MappingRefTable"], index_col=False)
 
     def add_probelength(self):
         '''Add length of target_id to each row of master df after splitting probelength data.'''
@@ -77,9 +78,13 @@ class Analysis:
         self.df["target_id"] = self.df.apply(
             lambda x: fix_rmlst(x), axis=1)
 
-        pdf['genename'] = pdf.target_id.apply(
-            lambda x: x.replace('_', '-').split('-')[0])
-        pdf['genename'] = pdf['genename'].str.lower()
+        pdf["organism"] = pdf.apply(lambda x: self.lut[self.lut["key"] == x["target_id"].split(
+            "_")[-1]]["organism"].iloc[0], axis=1)
+        # pdf['genename'] = pdf.target_id.apply( ###################################################
+        #     lambda x: x.replace('_', '-').split('-')[0]) # TODO < Changed 9.1.0
+        pdf['genename'] = pdf.target_id.str.lower().apply(
+            lambda x: x.split("_")[0])
+        # pdf['genename'] = pdf['genename'].str.lower()
 
         pdf["genename"] = pdf.apply(lambda x: x["genename"].lower(), axis=1)
         '''More precise definition for the different virus types'''
@@ -154,7 +159,7 @@ class Analysis:
         # pdf.loc[pdf.probetype.apply(lambda x: x.startswith('escherichia') or x.startswith(
         #     'klebsiella') or x.startswith('enterobacter')), 'probetype'] = 'enterobacteriaceae'
         loginfo(
-            f'Organism and gene summary: {pdf.probetype.nunique()} organisms, up to {pdf.groupby("probetype").genename.nunique().max()} genes each.')
+            f'Organism and gene summary: {pdf.organism.nunique()} organisms, up to {pdf.groupby("probetype").probetype.nunique().max()} aggregation levels (probetype) each.')
         pdf.to_csv(f"{self.output_dir}/probe_aggregation.csv")
 
         if pdf[pdf["probetype"] == ""].shape[0] > 0:
@@ -193,8 +198,8 @@ class Analysis:
                     f'Cannot create output directory {odir} for saving depth information. Proceeding with current working directory.')
 
             loginfo(
-                'INFO: Calculating read depth statistics for all probes, for all samples. This is a slow step.')
-            for (sampleid, probetype), g in self.df.groupby(['sampleid', 'probetype']):
+                'INFO: Calculating read depth statistics for all probes, for all samples.')
+            for (sampleid, probetype, organism), g in self.df.groupby(['sampleid', 'probetype', 'organism']):
                 gene_list = g.genename.unique()
                 n_genes = len(gene_list)
                 target_list = g.target_id.unique()
@@ -206,7 +211,13 @@ class Analysis:
                     D = np.zeros(int(gg.target_len.max()), dtype=np.uint32)
                     D1 = np.zeros(D.shape, dtype=np.uint32)
                     for target_id, gt in gg.groupby('target_id'):
-                        loginfo(f'..... target: {target_id[:100]}.')
+                        try:
+                            '''Don't give the user the hashed header name, it will only upset them'''
+                            sneaky_name = f'{target_id.split("_")[0]}_{self.lut[self.lut["key"] == target_id.split("_")[-1]]["description"].item()[0:100]}'
+                        except TypeError:
+                            '''If user has somehow broken fasta header'''
+                            sneaky_name = f'{target_id.split("_")[0]}'
+                        loginfo(f'..... target: {sneaky_name}.')
                         for _, row in gt.iterrows():
                             D[row.startpos-1:row.startpos-1+row.maplen] += row.n
                             D1[row.startpos-1:row.startpos-1+row.maplen] += 1
@@ -263,23 +274,23 @@ class Analysis:
                     fig.write_image(f'{odir}/{probetype}-{sampleid}.png')
 
                 '''Build up dictionary of depth metrics for this sample and probetype'''
-                metrics[sampleid, probetype] = (g.n.sum(), g.n.count(), n_targets, n_genes, nmax_targets, nmax_genes, nmax_probetype, npos,
-                                                amprate.mean(), amprate.std(), np.median(amprate),
-                                                D.mean(), D.std(), np.percentile(D, 25), np.median(D), np.percentile(D, 75),
-                                                raw_readcount,
-                                                (D > 0).sum(),
-                                                (D >= 2).sum(),
-                                                (D >= 5).sum(),
-                                                (D >= 10).sum(),
-                                                (D >= 100).sum(),
-                                                (D >= 1000).sum(),
-                                                D1.mean(), D1.std(), np.percentile(D1, 25), np.median(D), np.percentile(D1, 75),
-                                                (D1 > 0).sum(),
-                                                (D1 >= 2).sum(),
-                                                (D1 >= 5).sum(),
-                                                (D1 >= 10).sum(),
-                                                (D1 >= 100).sum(),
-                                                (D1 >= 1000).sum())
+                metrics[sampleid, probetype, organism] = (g.n.sum(), g.n.count(), n_targets, n_genes, nmax_targets, nmax_genes, nmax_probetype, npos,
+                                                          amprate.mean(), amprate.std(), np.median(amprate),
+                                                          D.mean(), D.std(), np.percentile(D, 25), np.median(D), np.percentile(D, 75),
+                                                          raw_readcount,
+                                                          (D > 0).sum(),
+                                                          (D >= 2).sum(),
+                                                          (D >= 5).sum(),
+                                                          (D >= 10).sum(),
+                                                          (D >= 100).sum(),
+                                                          (D >= 1000).sum(),
+                                                          D1.mean(), D1.std(), np.percentile(D1, 25), np.median(D), np.percentile(D1, 75),
+                                                          (D1 > 0).sum(),
+                                                          (D1 >= 2).sum(),
+                                                          (D1 >= 5).sum(),
+                                                          (D1 >= 10).sum(),
+                                                          (D1 >= 100).sum(),
+                                                          (D1 >= 1000).sum())
 
             '''Data frame of all depth metrics'''
             depth = pd.DataFrame(metrics, index=['reads_for_mapping', 'n_reads_dedup', 'n_targets', 'n_genes', 'nmax_targets', 'nmax_genes', 'npos_max_probetype', 'npos_cov_probetype',
@@ -300,7 +311,8 @@ class Analysis:
                                                  'npos_dedup_cov_mindepth100',
                                                  'npos_dedup_cov_mindepth1000']).T.reset_index()
             depth.rename(columns={'level_0': 'sampleid',
-                         'level_1': 'probetype'}, inplace=True)
+                         'level_1': 'probetype',
+                                  'level_2': "organism"}, inplace=True)
 
             '''Add reads on target (rot)'''
             try:

@@ -14,6 +14,10 @@ class Data_Ubiquitous(BaseModel):
                          description="Name your experiment/batch")
     SaveDir: str = Query('./experiments',
                          description="Name the root folder for your experiments. Default is to make a sub folder for each experiment run, in the ./experiments folder of your Castanet repository.")
+    RefStem: FilePath = Query("data/my_probes.fasta",
+                              description="Path to mapping file, in fasta format.")
+    MappingRefTable: str = Query("./my_mapping_ref_table.csv",
+                                 description="Path to mapping ref table file, to be created with the convert_mapping_reference function (see documentation).")
 
 
 class Data_DataFolder(BaseModel):
@@ -29,11 +33,6 @@ class Data_ExpDir(BaseModel):
 class Data_AdaptP(BaseModel):
     AdaptP: FilePath = Query('data/all_adapters.fa',
                              description='Location of your Trimmomatic adapter sequences - may be in your Trimmomatic path, but a backup is in the data dir.')
-
-
-class Data_RefStem(BaseModel):
-    RefStem: FilePath = Query("data/my_probes.fasta",
-                              description="Path to mapping file, in fasta format.")
 
 
 class Data_PostFilt(BaseModel):
@@ -136,31 +135,38 @@ class Concat_ont_data(BaseModel):
                                description="File format to search for and concatenate. Default is .fastq.gz.")
 
 
+class Convert_mapping_ref_data(BaseModel):
+    InFile: str = Query("./my_mapping_ref.fasta",
+                        description="Path to input CSV or FASTA mapping reference description file to be converted to a Castanet-compatible RefStem.")
+    OutFile: str = Query("./my_mapping_ref_table.csv",
+                         description="Output file name for converted mapping reference, in CSV format.")
+
+
 '''Endpoint objects'''
 
 
 class E2e_data(Data_AdaptP, Data_MappingParameters,
                Data_PostFilt, Data_AnalysisExtras, Data_KrakenDir,
                Data_ConsensusParameters, Data_FilterFilters, Data_TrimmomaticParams, Data_GenerateCounts,
-               Data_RefStem, Data_Ubiquitous, Data_ExpDir):
+               Data_Ubiquitous, Data_ExpDir):
     pass
 
 
 class Amp_e2e_data(Data_AdaptP, Data_MappingParameters,
                    Data_KrakenDir, Data_FilterFilters,
                    Data_TrimmomaticParams, Data_GenerateCounts,
-                   Data_RefStem, Data_Ubiquitous, Data_ExpDir):
+                   Data_Ubiquitous, Data_ExpDir):
     pass
 
 
-class E2e_eval_data(Data_Ubiquitous, Data_AdaptP, Data_RefStem, Data_MappingParameters,
+class E2e_eval_data(Data_Ubiquitous, Data_AdaptP, Data_MappingParameters,
                     Data_PostFilt, Data_AnalysisExtras, Data_KrakenDir, Data_FilterFilters,
                     Data_ConsensusParameters, Data_TrimmomaticParams, Data_GenerateCounts, Data_ExpDir):
     pass
 
 
 class Bam_workflow_data(Data_PostFilt, Data_AnalysisExtras, Data_ConsensusParameters,
-                        Data_GenerateCounts, Data_RefStem, Data_Ubiquitous, Data_ExpDir):
+                        Data_GenerateCounts, Data_Ubiquitous, Data_ExpDir):
     pass
 
 
@@ -176,19 +182,19 @@ class Trim_data(Data_Ubiquitous, Data_AdaptP, Data_TrimmomaticParams, Data_ExpDi
     pass
 
 
-class Mapping_data(Data_Ubiquitous, Data_MappingParameters, Data_GenerateCounts, Data_RefStem, Data_ExpDir):
+class Mapping_data(Data_Ubiquitous, Data_MappingParameters, Data_GenerateCounts, Data_ExpDir):
     pass
 
 
-class Count_map_data(Data_Ubiquitous, Data_GenerateCounts, Data_RefStem, Data_PostFilt, Data_ExpDir):
+class Count_map_data(Data_Ubiquitous, Data_GenerateCounts, Data_PostFilt, Data_ExpDir):
     pass
 
 
-class Analysis_data(Data_Ubiquitous, Data_AnalysisExtras, Data_RefStem, Data_ExpDir):
+class Analysis_data(Data_Ubiquitous, Data_AnalysisExtras, Data_ExpDir):
     pass
 
 
-class Post_filter_data(Data_Ubiquitous, Data_AnalysisExtras, Data_RefStem, Data_ConsensusParameters, Data_MappingParameters, Data_GenerateCounts, Data_ExpDir):
+class Post_filter_data(Data_Ubiquitous, Data_AnalysisExtras, Data_ConsensusParameters, Data_MappingParameters, Data_GenerateCounts, Data_ExpDir):
     pass
 
 
@@ -198,16 +204,15 @@ class Amplicon_data(Data_Ubiquitous, Data_ExpDir):
 
 class Batch_eval_data(Data_AdaptP, Data_PostFilt, Data_AnalysisExtras, Data_KrakenDir, Data_MappingParameters,
                       Data_ConsensusParameters, Data_GenerateCounts, Data_FilterFilters, Data_TrimmomaticParams,
-                      Data_RefStem, Data_Ubiquitous, Data_DataFolder):
+                      Data_Ubiquitous, Data_DataFolder):
     pass
 
 
-class Consensus_data(Data_Ubiquitous, Data_RefStem, Data_ConsensusParameters, Data_MappingParameters, Data_ExpDir):
+class Consensus_data(Data_Ubiquitous, Data_ConsensusParameters, Data_MappingParameters, Data_ExpDir):
     pass
 
 
-class Eval_data(Data_Ubiquitous, Data_RefStem,
-                Data_ConsensusParameters, Data_ExpDir):
+class Eval_data(Data_Ubiquitous, Data_ConsensusParameters, Data_ExpDir):
     pass
 
 

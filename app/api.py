@@ -28,9 +28,10 @@ from app.src.post_filter import run_post_filter
 from app.utils.attempt_imports import import_test
 from app.utils.hash_files import check_infile_hashes
 from app.utils.cleanup import clean_intermediates
+from app.utils.mapping_ref_convert import MappingRefConverter
 from app.utils.api_classes import (Batch_eval_data, E2e_data, Preprocess_data, Filter_keep_reads_data, Amp_e2e_data, Concat_ont_data,
                                    Trim_data, Mapping_data, Count_map_data, Analysis_data, Dep_check_data, Amplicon_data,
-                                   Post_filter_data, Consensus_data, Convert_probe_data, Bam_workflow_data, Combine_output_data)
+                                   Post_filter_data, Consensus_data, Convert_probe_data, Bam_workflow_data, Combine_output_data, Convert_mapping_ref_data)
 
 logger = logging.getLogger('uvicorn.error')
 logger.setLevel(logging.DEBUG)
@@ -64,7 +65,7 @@ banner()
 
 app = FastAPI(
     title="Castanet",
-    version="9.0",
+    version="9.1",
     description=description,
     contact={
         "name": "Nuffield Department of Medicine, University of Oxford",
@@ -83,7 +84,6 @@ app = FastAPI(
 def process_payload(payload) -> dict:
     '''Parse payload and do initial input checks'''
     payload = jsonable_encoder(payload)
-    check_mapping_ref(payload["RefStem"])
 
     if "SingleEndedReads" in payload.keys():
         if payload["SingleEndedReads"] and payload["Mapper"] != "minimap2":
@@ -93,7 +93,11 @@ def process_payload(payload) -> dict:
         if type(payload[key]) == str:
             if " " in payload[key]:
                 stoperr(
-                    f"Your parameter {key} contains spaces. Please remove these and re-run.")
+                    f"Your parameter '{key}' contains spaces. Please remove these and re-run.")
+            if "~" in payload[key]:
+                stoperr(
+                    f"You can't use tildes (~) in the API box (you used one in '{key}'). Sorry about that! Please use dots (./, ../ etc.) to indicate file paths relative to the Castanet directory, or use absolute."
+                )
 
     if "NThreads" in payload.keys():
         if type(payload["NThreads"]) == str:
@@ -130,7 +134,11 @@ def process_payload(payload) -> dict:
             stoperr(
                 f"NThreads parameter should either be an integer, or 'auto' or 'hpc'.")
 
+    '''Make directories and copies of mapping ref fasta/table'''
     write_input_params(payload)
+    clf = MappingRefConverter(payload, sneaky_mode=True)
+    payload = clf.main()
+
     return payload
 
 
@@ -377,11 +385,11 @@ def run_amplicons(payload) -> None:
 
 
 @app.post("/convert_mapping_reference/", tags=["Convenience functions"])
-async def convertprobes(payload: Convert_probe_data) -> str:
+async def convertprobes(payload: Convert_mapping_ref_data) -> str:
     payload = jsonable_encoder(payload)
-    clf = ProbeFileGen(payload)
-    clf.main()
-    return f"Task complete. Output saved to: {payload['OutFolder']}/{payload['OutFileName']}.fasta / .csv."
+    clf = MappingRefConverter(payload, sneaky_mode=False)
+    status = clf.main()
+    return status
 
 
 @app.post("/combine_analytical_output/", tags=["Convenience functions"])
