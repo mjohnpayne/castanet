@@ -72,6 +72,9 @@ class MappingRefConverter:
             df[["organism", "probetype", "description", "key"]].to_csv(
                 f"{self.out_file}", index=False)
         else:
+            if not os.path.exists(f"{self.payload['SaveDir']}/{self.payload['ExpName']}/"):
+                os.makedirs(
+                    f"{self.payload['SaveDir']}/{self.payload['ExpName']}/")
             self.payload["MappingRefTable"] = f"{self.payload['SaveDir']}/{self.payload['ExpName']}/MappingRefTable.csv"
             df = df.applymap(lambda s: s.lower() if type(s) == str else s)
             df[["organism", "probetype", "description", "key"]].to_csv(

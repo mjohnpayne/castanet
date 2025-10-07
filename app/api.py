@@ -93,7 +93,11 @@ def process_payload(payload) -> dict:
         if type(payload[key]) == str:
             if " " in payload[key]:
                 stoperr(
-                    f"Your parameter {key} contains spaces. Please remove these and re-run.")
+                    f"Your parameter '{key}' contains spaces. Please remove these and re-run.")
+            if "~" in payload[key]:
+                stoperr(
+                    f"You can't use tildes (~) in the API box (you used one in '{key}'). Sorry about that! Please use dots (./, ../ etc.) to indicate file paths relative to the Castanet directory, or use absolute."
+                )
 
     if "NThreads" in payload.keys():
         if type(payload["NThreads"]) == str:
