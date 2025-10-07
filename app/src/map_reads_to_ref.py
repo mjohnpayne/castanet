@@ -15,7 +15,7 @@ def run_map(p, is_test=False):
                 f"{p['SaveDir']}/{p['ExpName']}/{p['ExpName']}_2_clean.fastq"]
     CLEAN_UP = True
 
-    # TODO < So much redundancy here. Can be made into single loop
+    # TODO < So much redundancy here. Can be refactored into single loop
 
     '''Check input files exist and are non-empty'''
     for fn in in_files:
