@@ -6,6 +6,7 @@ from test.utils import get_random_str, make_rand_dir, get_default_args
 from app.src.analysis import Analysis
 from app.src.generate_counts import run_counts
 from app.src.map_reads_to_ref import run_map
+from app.utils.mapping_ref_convert import MappingRefConverter
 
 
 def init_map(p):
@@ -24,6 +25,7 @@ def init_analysis(start_with_bam=False):
         shutil.rmtree(fstem)
     os.mkdir(fstem)
 
+    p = MappingRefConverter(p, sneaky_mode=True).main()
     init_map(p)
     run_counts(p)
 
