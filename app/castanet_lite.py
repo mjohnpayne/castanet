@@ -13,7 +13,7 @@ def defaults():
         "RefStem": "data/eval/ref.fa",
         "MappingRefTable": "",
         "Mapper": "bwa",
-        "SingleEndedReads": False,
+        "SingleEndedReads": True,
         "MatchLength": 40,
         "DoTrimming": True,
         "TrimMinLen": 36,

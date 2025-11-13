@@ -165,10 +165,11 @@ class Consensus:
 
     def build_msa_requisites(self, org_name) -> None:
         '''Create fasta files containing target reference seqs and consensus seqs, for downstream MSA'''
-        ref_seq_names = list(set([i["tar_name"].replace(">", "")
+        ref_seq_names = list(set([i["tar_name"].replace(">", "").lower()
                                   for i in self.target_consensuses[org_name]]))
         ref_seqs = [ref for ref in self.refs if ref[0].replace(
-            ">", "") in ref_seq_names]
+            ">", "").lower() in ref_seq_names]
+
         assert len(
             ref_seqs) > 0, f"Couldn't match ref sequences to target name for {org_name}"
 

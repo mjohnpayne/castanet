@@ -59,6 +59,8 @@ def parse_arguments_lite():
                         help="path to the ncbi_lineages_2023-06-15.csv.gz file (in the castanet repo)")
     parser.add_argument('-AdaptP', required=False,
                         default="data/all_adapters.fa", type=str)
+    parser.add_argument('-SingleEndedReads', required=False,
+                        default=False, type=str)
     bool_fields = ["Batch", "BAM", "DoKrakenPrefilter",
                    "DoTrimming", "DoConsensus"]
     return parser, bool_fields
