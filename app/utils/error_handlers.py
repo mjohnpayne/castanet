@@ -163,7 +163,8 @@ def error_handler_cli(out, out_fname, tool, test_out_f=True, test_f_size=False):
     if test_out_f:
         if not os.path.exists(out_fname):
             stoperr(
-                f"{tool} seems to be installed but didn't produce output. Please check your installation manually.")
+                f"{tool} didn't produce output. Castanet doesn't have a specific handler for this type of error, but it usually means a CLI tool Castnaet uses has not functioned correctly."
+                f"Recommended actions include checking your input data and ensuring all Castanet dependencies are correctly installed.")
     if test_f_size:
         if os.stat(out_fname).st_size < 2:
             stoperr(f"{tool} produced an empty output file."

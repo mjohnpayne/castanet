@@ -226,8 +226,7 @@ class Consensus:
                 return ('', np.nan)
 
             try:
-                just_measured_bases = s[-int(len(s))
-                                             :].lower().replace("-", "").replace("n", "")
+                just_measured_bases = s[-int(len(s))                                        :].lower().replace("-", "").replace("n", "")
                 consbase, consnum = Counter(
                     just_measured_bases).most_common()[0]
 
@@ -327,8 +326,13 @@ class Consensus:
                   f"bowtie2 -x {self.a['folder_stem']}consensus_data/{org_name}/reference_indices -U - -p {self.a['NThreads']} --local -I 50 --maxins 2000 --no-unal |"
                   f"viral_consensus -i - -r {self.a['folder_stem']}consensus_data/{org_name}/{org_name}_flat_consensus_sequence.fasta -o {flat_cons_fname} --min_depth {self.a['ConsensusMinD']} --out_pos_counts {self.a['folder_stem']}consensus_data/{org_name}/{org_name}_consensus_pos_counts.csv")
 
-        error_handler_cli("", flat_cons_fname,
-                          "viral_consensus", test_f_size=True)
+        try:
+            error_handler_cli("", flat_cons_fname,
+                              "viral_consensus", test_f_size=True)
+        except Exception as ex:
+            logerr(f"Consnesus sequence generation failed for {org_name} while attempting to remap to the flat consensus. "
+                   f"Skipping remapped consensus generation. Error details: {ex}")
+            return
 
         try:
             self.fix_terminal_gaps(f"{self.a['folder_stem']}consensus_data/{org_name}/{org_name}_consensus_pos_counts.csv",
@@ -386,46 +390,50 @@ class Consensus:
         #     f"{self.a['folder_stem']}grouped_reads/", "*.bam")
 
     def generate_summary(self, org) -> None:
-        dfpath = f"{self.a['folder_stem']}/consensus_seq_stats.csv"
-        cols = ["target", "n_bases", "n_reads",
-                "gc_pc", "missing_bs", "ambig_bs", "cov"]
-        df = pd.DataFrame(columns=cols)
-
-        if os.path.isfile(dfpath):
-            os.remove(dfpath)
-
-        '''remapped cons stats'''
-        c_df = pd.read_csv(
-            f"{self.a['folder_stem']}/consensus_data/{org}/{org}_consensus_pos_counts.csv")
-        gc = round((c_df["G"].sum() + c_df["C"].sum()) /
-                   c_df["Total"].sum() * 100, 2)
-
-        missing = c_df[c_df["Total"] == 0].shape[0]
-        ambigs = c_df[(c_df["-"] != 0) & (c_df["A"] == 0) & (c_df["C"]
-                                                             == 0) & (c_df["T"] == 0) & (c_df["G"] == 0)].shape[0]
-        coverage = round(
-            (1 - ((missing + ambigs) / c_df["Total"].sum())) * 100, 2)
-
-        '''Get additional stats on consensus remapping'''
         try:
-            additional_stats = {}
-            with open(f"{self.a['folder_stem']}/consensus_data/{org}/supplementary_stats.p", 'rb') as f:
-                additional_stats["n_remapped_seqs"] = p.load(
-                    f)["filtered_collated_read_num"]
+            dfpath = f"{self.a['folder_stem']}/consensus_seq_stats.csv"
+            cols = ["target", "n_bases", "n_reads",
+                    "gc_pc", "missing_bs", "ambig_bs", "cov"]
+            df = pd.DataFrame(columns=cols)
 
-            c_stats = pd.DataFrame([[org, c_df["Total"].sum(
-            ), additional_stats['n_remapped_seqs'], gc, missing, ambigs, coverage]], columns=cols)
-            df = pd.concat([df, c_stats], axis=0, ignore_index=True)
-            df.to_csv(dfpath)
-        except FileNotFoundError:
-            logerr(f"Couldn't find supplementary stats for {org}, skipping addition of remapped read count to summary csv."
-                   f"This can happen if individual pipeline stages are run out-of-synch with each other.")
+            if os.path.isfile(dfpath):
+                os.remove(dfpath)
 
-        if self.a["DebugMode"]:
-            '''Plot consensus coverage'''
-            px.line(c_df, x="Pos", y="Total", title=f"Consensus coverage, {org} ({self.a['ExpName']})",
-                    labels={"Pos": "Position", "Total": "Num Reads"}).write_image(
-                f"{self.a['folder_stem']}/consensus_data/{org}/{org}_consensus_coverage.png")
+            '''remapped cons stats'''
+            c_df = pd.read_csv(
+                f"{self.a['folder_stem']}/consensus_data/{org}/{org}_consensus_pos_counts.csv")
+            gc = round((c_df["G"].sum() + c_df["C"].sum()) /
+                       c_df["Total"].sum() * 100, 2)
+
+            missing = c_df[c_df["Total"] == 0].shape[0]
+            ambigs = c_df[(c_df["-"] != 0) & (c_df["A"] == 0) & (c_df["C"]
+                                                                 == 0) & (c_df["T"] == 0) & (c_df["G"] == 0)].shape[0]
+            coverage = round(
+                (1 - ((missing + ambigs) / c_df["Total"].sum())) * 100, 2)
+
+            '''Get additional stats on consensus remapping'''
+            try:
+                additional_stats = {}
+                with open(f"{self.a['folder_stem']}/consensus_data/{org}/supplementary_stats.p", 'rb') as f:
+                    additional_stats["n_remapped_seqs"] = p.load(
+                        f)["filtered_collated_read_num"]
+
+                c_stats = pd.DataFrame([[org, c_df["Total"].sum(
+                ), additional_stats['n_remapped_seqs'], gc, missing, ambigs, coverage]], columns=cols)
+                df = pd.concat([df, c_stats], axis=0, ignore_index=True)
+                df.to_csv(dfpath)
+            except FileNotFoundError:
+                logerr(f"Couldn't find supplementary stats for {org}, skipping addition of remapped read count to summary csv."
+                       f"This can happen if individual pipeline stages are run out-of-synch with each other.")
+
+            if self.a["DebugMode"]:
+                '''Plot consensus coverage'''
+                px.line(c_df, x="Pos", y="Total", title=f"Consensus coverage, {org} ({self.a['ExpName']})",
+                        labels={"Pos": "Position", "Total": "Num Reads"}).write_image(
+                    f"{self.a['folder_stem']}/consensus_data/{org}/{org}_consensus_coverage.png")
+        except Exception as ex:
+            logerr(
+                f"Couldn't generate summary for {org}. This usually happens if a consensus sequence failed to generate. Error details: {ex}")
 
     def main(self) -> None:
         '''Entrypoint. Index main bam, filter it, make target consensuses, then create flattened consensus'''
