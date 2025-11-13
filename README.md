@@ -19,11 +19,13 @@ Described in Mayne, R., Secret., S., Geoghegan, C., et al. (2024) Castanet: a pi
 
 <a href="https://hub.docker.com/r/mayne941/castanet"><img src="docs/docker-mark-blue.png" alt="drawing" width="25" /> Try Castanet with Docker @ DockerHub</a>
 
-# New in V9.1.0
+# New in V9.1.2
 1. Users may now supply mapping references in any format, and fine-tune them with the /convert_mapping_reference/ funciton. See [Making a mapping reference](https://github.com/MultipathogenGenomics/castanet/wiki/References) for more details.
-2. Bug fixes.
+1. Additional CLI support for Nanopore workflows
+1. Bug fixes.
     * Fixed an issue where Kraken2 wouldn't run properly in the filtering pipeline step when nested save directories were used.
     * Interim unzipped fastq files are now not created and left in experiment directories when using Minimap2.
+    * Extra error handling for consensus generation issues where third party CLI tools are called.
 
 # [Documentation](https://github.com/MultipathogenGenomics/castanet/wiki)
 Castanet documentation is hosted on our [GitHub Wiki Page](https://github.com/MultipathogenGenomics/castanet/wiki)

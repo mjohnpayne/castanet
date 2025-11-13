@@ -326,6 +326,11 @@ class Consensus:
                   f"bowtie2 -x {self.a['folder_stem']}consensus_data/{org_name}/reference_indices -U - -p {self.a['NThreads']} --local -I 50 --maxins 2000 --no-unal |"
                   f"viral_consensus -i - -r {self.a['folder_stem']}consensus_data/{org_name}/{org_name}_flat_consensus_sequence.fasta -o {flat_cons_fname} --min_depth {self.a['ConsensusMinD']} --out_pos_counts {self.a['folder_stem']}consensus_data/{org_name}/{org_name}_consensus_pos_counts.csv")
 
+        elif self.a["Mapper"] == "minimap2":
+            shell(f"samtools fastq -@ {self.a['NThreads']} {self.fnames['master_bam']} |"
+                  f"minimap2 -ax map-ont {self.a['folder_stem']}consensus_data/{org_name}/{org_name}_flat_consensus_sequence.fasta - |"
+                  f"viral_consensus -i - -r {self.a['folder_stem']}consensus_data/{org_name}/{org_name}_flat_consensus_sequence.fasta -o {flat_cons_fname} --min_depth {self.a['ConsensusMinD']} --out_pos_counts {self.a['folder_stem']}consensus_data/{org_name}/{org_name}_consensus_pos_counts.csv")
+
         try:
             error_handler_cli("", flat_cons_fname,
                               "viral_consensus", test_f_size=True)
