@@ -19,35 +19,20 @@ Described in Mayne, R., Secret., S., Geoghegan, C., et al. (2024) Castanet: a pi
 
 <a href="https://hub.docker.com/r/mayne941/castanet"><img src="docs/docker-mark-blue.png" alt="drawing" width="25" /> Try Castanet with Docker @ DockerHub</a>
 
-# New in V9.0.2
-##### N.b. if upgrading an existing installation, users will need to install minimap2 to their Castanet Conda environment manually!
-##### $ conda install -c bioconda -y minimap2
-* Additional support for ONT users
-    * Option to use Minimap2 as mapper
-    * Utility function for concatenating all .fastq.gz files in a directory to a single, Castanet-compatible file
-* Mapping reference file checks are now completed at the start of each run, and users are alerted if common issues are found
-* Additional details from stderr written to terminal in errors
-* Bug fixes
-    * Non-Castanet-compliant mapping reference headers would cause failure to generate consensus sequences
-    * Using bowtie2 as mapper would create cosnensus sequences with unusual names
-    * Running multiple Castanet jobs in parallel via CLI could cause issues with re-indexing the refstem
-    * Added error handling to prevent users from inserting non-printable characters in API arguments
-    * Summary statistics for batch runs now aggregate correctly in nested folders
-* Docker container updated with latest version
-
-# New in V9.0
-* Consensus algorithm enhancements to give more representative results with highly diverse/recombination-prone viruses
-* Post filter option for removing uniquely-mapping reads (uses include removal of index hopping reads)
-* BAM parsing enhancements for compute time and memory footprint.
-* Parameterised "debug mode", where if False no intermediate files are generated (cleaner output to save space, esp. for use on shared infrastructure)
-* Test suite updates
-* Various QOL & bug fixes
+# New in V9.1.2
+1. Users may now supply mapping references in any format, and fine-tune them with the /convert_mapping_reference/ funciton. See [Making a mapping reference](https://github.com/MultipathogenGenomics/castanet/wiki/References) for more details.
+1. Additional CLI support for Nanopore workflows
+1. Bug fixes.
+    * Fixed an issue where Kraken2 wouldn't run properly in the filtering pipeline step when nested save directories were used.
+    * Interim unzipped fastq files are now not created and left in experiment directories when using Minimap2.
+    * Extra error handling for consensus generation issues where third party CLI tools are called.
 
 # [Documentation](https://github.com/MultipathogenGenomics/castanet/wiki)
 Castanet documentation is hosted on our [GitHub Wiki Page](https://github.com/MultipathogenGenomics/castanet/wiki)
 ## [Installation](https://github.com/MultipathogenGenomics/castanet/wiki/Installation)
 ## [Quick start](https://github.com/MultipathogenGenomics/castanet/wiki/Quickstart)
 ## [Usage](https://github.com/MultipathogenGenomics/castanet/wiki/Usage)
+## [Making a mapping reference](https://github.com/MultipathogenGenomics/castanet/wiki/References)
 ## [Output file interpretation](https://github.com/MultipathogenGenomics/castanet/wiki/Output)
 ## [Advanced usage options](https://github.com/MultipathogenGenomics/castanet/wiki/Advanced)
 ## [Guide for contributors](https://github.com/MultipathogenGenomics/castanet/wiki/Contributors)
@@ -59,6 +44,28 @@ Castanet documentation is hosted on our [GitHub Wiki Page](https://github.com/Mu
 Dotted lines indicate optional pipeline stages.
 
 # Changelog
+# Version 9, 21/08/25
+##### N.b. if upgrading an existing installation, users will need to install minimap2 to their Castanet Conda environment manually!
+##### $ conda install -c bioconda -y minimap2
+1. Additional support for ONT users
+    * Option to use Minimap2 as mapper
+    * Utility function for concatenating all .fastq.gz files in a directory to a single, Castanet-compatible file
+1. Mapping reference file checks are now completed at the start of each run, and users are alerted if common issues are found
+1. Additional details from stderr written to terminal in errors
+1. Bug fixes
+    * Non-Castanet-compliant mapping reference headers would cause failure to generate consensus sequences
+    * Using bowtie2 as mapper would create cosnensus sequences with unusual names
+    * Running multiple Castanet jobs in parallel via CLI could cause issues with re-indexing the refstem
+    * Added error handling to prevent users from inserting non-printable characters in API arguments
+    * Summary statistics for batch runs now aggregate correctly in nested folders
+1. Docker container updated with latest version
+1. Consensus algorithm enhancements to give more representative results with highly diverse/recombination-prone viruses
+1. Post filter option for removing uniquely-mapping reads (uses include removal of index hopping reads)
+1. BAM parsing enhancements for compute time and memory footprint.
+1. Parameterised "debug mode", where if False no intermediate files are generated (cleaner output to save space, esp. for use on shared infrastructure)
+1. Test suite updates
+
+
 ## Version 8, 20/12/24
 1. Added user option to map with bowtie2, in addition to BWA-mem2
 1. Troubleshooting section added to Wiki

@@ -15,11 +15,7 @@ def run_map(p, is_test=False):
                 f"{p['SaveDir']}/{p['ExpName']}/{p['ExpName']}_2_clean.fastq"]
     CLEAN_UP = True
 
-    if not is_test:
-        '''Move refstem to experiment folder'''
-        tmp_refstem = f"{p['SaveDir']}/{p['ExpName']}/ref.fa"
-        shutil.copy(p['RefStem'], tmp_refstem)
-        p['RefStem'] = tmp_refstem
+    # TODO < So much redundancy here. Can be refactored into single loop
 
     '''Check input files exist and are non-empty'''
     for fn in in_files:
@@ -49,6 +45,9 @@ def run_map(p, is_test=False):
         if p["SingleEndedReads"]:
             shell(
                 f"bwa-mem2 mem -t {p['NThreads']} {p['RefStem']} {in_files[0]} | samtools view -F4 -Sb - | samtools sort - 1> {p['SaveDir']}/{p['ExpName']}/{p['ExpName']}.bam")
+            shell(  # This is done out of sync with CLEAN_UP as we can't assume user has not transferred single file to exp directory
+                f"rm {p['SaveDir']}/{p['ExpName']}/{p['ExpName']}_1_clean.fastq")
+
         else:
             shell(
                 f"bwa-mem2 mem -t {p['NThreads']} {p['RefStem']} {in_files[0]} {in_files[1]} | samtools view -F4 -Sb - | samtools sort - 1> {p['SaveDir']}/{p['ExpName']}/{p['ExpName']}.bam")
@@ -82,6 +81,8 @@ def run_map(p, is_test=False):
         if p["SingleEndedReads"]:
             out = shell(
                 f"minimap2 -ax map-ont {p['RefStem']} {in_files[0]} | samtools view -F4 -Sb - | samtools sort - 1> {p['SaveDir']}/{p['ExpName']}/{p['ExpName']}.bam",  is_test=True)
+            shell(  # This is done out of sync with CLEAN_UP as we can't assume user has not transferred single file to exp directory
+                f"rm {p['SaveDir']}/{p['ExpName']}/{p['ExpName']}_1_clean.fastq")
 
         else:
             out = shell(
@@ -97,4 +98,5 @@ def run_map(p, is_test=False):
     if CLEAN_UP:
         shell(
             f"rm {p['SaveDir']}/{p['ExpName']}/{p['ExpName']}_[12]_clean.fastq")
+
     end_sec_print(f"INFO: Mapping complete")
