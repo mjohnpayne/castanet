@@ -80,3 +80,7 @@ def test_sneaky_mode():
         init_mapping_ref_convert_invalid_fasta(i)
         init_mapping_ref_convert_disallowed_chars(i)
         init_mapping_ref_convert_valid_fasta(i)
+
+
+if __name__ == "__main__":
+    test_sneaky_mode()
