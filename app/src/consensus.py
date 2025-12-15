@@ -50,6 +50,9 @@ class Consensus:
         except TypeError:
             '''If user has somehow broken fasta header'''
             sneaky_name = f'{tar_name.split("_")[0]}'
+        except ValueError:
+            # TODO < V9.2 fix, not accepting link to mapping ref
+            stoperr(f"Castanet doesn't yet support calling a consensus sequence without you supplying a valid mapping reference table.")
         loginfo(f"Calling subconsensus for target: {sneaky_name}")
         tar_name = tar_name.lower()
         is_regex = False
@@ -115,6 +118,7 @@ class Consensus:
         '''Group targets to organism via probe name (compiled in analysis.py)'''
         match = self.probe_names.iloc[np.where(
             np.isin(self.probe_names["orig_target_id"].str.lower(), ref[0:100].replace(">", "")))[0]]  # TODO < Curtailment
+
         if match.empty:
             print(
                 f"WARNING: Couldn't match reads to probe name: {self.probe_names['target_id']}")
@@ -232,19 +236,11 @@ class Consensus:
 
             except IndexError:  # TODO < MESSY
                 return ('', np.nan)
+
             if float(consnum)/len(s) < 0.1:
                 consbase, consnum = Counter(
                     s.replace("-", "")).most_common()[0]
 
-            return consbase, float(consnum)/len(s)
-
-        def base_cons_deprecated(s):
-            ''' Return strict consensus for a set of bases (eg. column in alignment), ignoring gaps. '''
-            len_max = len(s)
-            s = s.replace('-', '')
-            if not s or (len(s) <= 0.1 * len_max):
-                return ('', np.nan)
-            consbase, consnum = Counter(s.lower()).most_common()[0]
             return consbase, float(consnum)/len(s)
 
         aln = AlignIO.read(

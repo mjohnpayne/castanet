@@ -19,6 +19,10 @@ class MappingRefConverter:
         self.sneaky_mode = sneaky_mode
 
     def make_csv(self) -> pd.DataFrame:
+        if not self.in_file.endswith((".fa", ".fasta", ".fna")):
+            # RM < TODO This needs to be tested at the API call!
+            stoperr(
+                f"Input mapping reference file {self.in_file} is not a fasta file.")
         try:
             fastas = read_fa(self.in_file)
         except Exception as e:
