@@ -19,6 +19,9 @@ class MappingRefConverter:
         self.sneaky_mode = sneaky_mode
 
     def make_csv(self) -> pd.DataFrame:
+        if not self.in_file.endswith((".fa", ".fasta", ".fna")):
+            stoperr(
+                f"Input mapping reference file {self.in_file} is not a fasta file.")
         try:
             fastas = read_fa(self.in_file)
         except Exception as e:
@@ -27,7 +30,7 @@ class MappingRefConverter:
         agg_headers, descriptions, seqs, organisms = [], [], [], []
         for fasta in fastas:
             if len(fasta[0].split("_")) < 2:
-                logerr(f"Mapping reference aggregator {fasta[0]} has no underscores, so will not aggregate with any other references! Please refer to documentation. "
+                logerr(f"Mapping reference {fasta[0]} has no underscores, so will not aggregate with any other references! Please refer to documentation. "
                        f"I'm setting this to '{self.default_aggregation_val}'.")
                 agg_headers.append(self.default_aggregation_val)
                 descriptions.append(fasta[0].replace(">", ""))
@@ -37,21 +40,32 @@ class MappingRefConverter:
                     "_".join(fasta[0].split("_")[1:]).replace(",", ""))
             organisms.append(fasta[0].split(
                 "_")[0].replace(">", "").split("-")[0])
-            seqs.append(fasta[1])
+            try:
+                seqs.append(fasta[1])
+            except IndexError as e:
+                stoperr(
+                    f"Fasta entry {fasta[0]} has no sequence associated with it. Please check your file is a valid FASTA.")
         df = pd.DataFrame({"organism": organisms, "probetype": agg_headers,
                            "description": descriptions, "sequence": seqs})
         return df
 
     def input_checks(self, df) -> pd.DataFrame:
-        aggregation_headers = df["probetype"].unique().tolist()
-        disallowed_chars = [" ", "/", "\\", ":",
-                            "*", "?", "\"", "<", ">", "|", ",", "_"]
+        '''Scans header organism and probetype values for disallowed characters. Stop if found and report to user.'''
+        aggregation_headers = df["organism"].unique(
+        ).tolist() + df["probetype"].unique().tolist()
+        disallowed_chars = [" ", "/", "\\", ":", "@", "(", ")", "]", "[", ";", "#", "$", "%", "^", "&",
+                            "*", "?", "\"", "<", ">", ","]
 
+        errors = []
         for header in aggregation_headers:
             for char in disallowed_chars:
                 if char in header:
-                    raise ValueError(f"Disallowed character '{char}' found in probetype value '{header}'"
-                                     f"Please remove or replace it, then try again.")
+                    errors.append([char, header])
+
+        if len(errors) > 0:
+            stoperr(f"Disallowed characters '{[i[0] for i in errors]}' found in probetype value '{[i[1] for i in errors]}'"
+                    f" Please remove or replace, then try again.")
+
         return df
 
     def generate_hash(self, df) -> pd.DataFrame:
