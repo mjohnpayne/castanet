@@ -19,13 +19,13 @@ Described in Mayne, R., Secret., S., Geoghegan, C., et al. (2024) Castanet: a pi
 
 <a href="https://hub.docker.com/r/mayne941/castanet"><img src="docs/docker-mark-blue.png" alt="drawing" width="25" /> Try Castanet with Docker @ DockerHub</a>
 
-# New in V9.1.2
-1. Users may now supply mapping references in any format, and fine-tune them with the /convert_mapping_reference/ funciton. See [Making a mapping reference](https://github.com/MultipathogenGenomics/castanet/wiki/References) for more details.
-1. Additional CLI support for Nanopore workflows
-1. Bug fixes.
-    * Fixed an issue where Kraken2 wouldn't run properly in the filtering pipeline step when nested save directories were used.
-    * Interim unzipped fastq files are now not created and left in experiment directories when using Minimap2.
-    * Extra error handling for consensus generation issues where third party CLI tools are called.
+# New in V9.2.0
+1. Extensions to consensus generator algorithm to allow for greater precision in deconvolving similar sequences
+1. Mapping reference creator now has extended functionality and user guidance
+1. Docker container refresh with simplified build
+1. Fix for bug using postfilt option in batch mode
+1. Extended support for ONT users
+1. Wiki updates
 
 # [Documentation](https://github.com/MultipathogenGenomics/castanet/wiki)
 Castanet documentation is hosted on our [GitHub Wiki Page](https://github.com/MultipathogenGenomics/castanet/wiki)
@@ -47,12 +47,17 @@ Dotted lines indicate optional pipeline stages.
 # Version 9, 21/08/25
 ##### N.b. if upgrading an existing installation, users will need to install minimap2 to their Castanet Conda environment manually!
 ##### $ conda install -c bioconda -y minimap2
+1. Users may now supply mapping references in any format, and fine-tune them with the /convert_mapping_reference/ funciton. See [Making a mapping reference](https://github.com/MultipathogenGenomics/castanet/wiki/References) for more details.
+1. Additional CLI support for Nanopore workflows
 1. Additional support for ONT users
     * Option to use Minimap2 as mapper
     * Utility function for concatenating all .fastq.gz files in a directory to a single, Castanet-compatible file
 1. Mapping reference file checks are now completed at the start of each run, and users are alerted if common issues are found
 1. Additional details from stderr written to terminal in errors
 1. Bug fixes
+    * Fixed an issue where Kraken2 wouldn't run properly in the filtering pipeline step when nested save directories were used.
+    * Interim unzipped fastq files are now not created and left in experiment directories when using Minimap2.
+    * Extra error handling for consensus generation issues where third party CLI tools are called.
     * Non-Castanet-compliant mapping reference headers would cause failure to generate consensus sequences
     * Using bowtie2 as mapper would create cosnensus sequences with unusual names
     * Running multiple Castanet jobs in parallel via CLI could cause issues with re-indexing the refstem
