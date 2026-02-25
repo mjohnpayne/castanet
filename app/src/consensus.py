@@ -172,7 +172,7 @@ class Consensus:
         ref_seq_names = list(set([i["tar_name"].replace(">", "").lower()
                                   for i in self.target_consensuses[org_name]]))
         ref_seqs = [ref for ref in self.refs if ref[0].replace(
-            ">", "").lower() in ref_seq_names]
+            ">", "").split(" ")[0].lower() in ref_seq_names]
 
         assert len(
             ref_seqs) > 0, f"Couldn't match ref sequences to target name for {org_name}"
