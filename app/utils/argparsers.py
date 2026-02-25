@@ -61,6 +61,8 @@ def parse_arguments_lite():
                         default="data/all_adapters.fa", type=str)
     parser.add_argument('-SingleEndedReads', required=False,
                         default=False, type=str)
+    parser.add_argument('-MappingRefTable', required=False,
+                        default=False, type=str)
     bool_fields = ["Batch", "BAM", "DoKrakenPrefilter",
                    "DoTrimming", "DoConsensus"]
     return parser, bool_fields
