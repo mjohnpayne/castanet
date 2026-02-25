@@ -230,7 +230,8 @@ class Consensus:
                 return ('', np.nan)
 
             try:
-                just_measured_bases = s[-int(len(s))                                        :].lower().replace("-", "").replace("n", "")
+                just_measured_bases = s[-int(len(s))
+                                             :].lower().replace("-", "").replace("n", "")
                 consbase, consnum = Counter(
                     just_measured_bases).most_common()[0]
 
@@ -367,10 +368,12 @@ class Consensus:
         cons["-"] = cons.apply(lambda x: 1 if x["Total"] == 0 else 0, axis=1)
         cons["con"] = cons["con"].astype(str)
         cons.to_csv(in_fname)
+        # RM < TODO Add in deduplicated depth :S
+        fasta_header = f">{self.a['ExpName']}_{in_fname.split('/')[-1].split('_')[0]}_consensus_MinDepth{self.a['ConsensusMinD']}"
         save_fa(
-            out_fname, f">{self.a['ExpName']}_{in_fname.split('/')[-1].split('_')[0]}_consensus_MinDepth{self.a['ConsensusMinD']}\n{''.join(cons['con'].tolist())}")
+            out_fname, f">{fasta_header}\n{''.join(cons['con'].tolist())}")
         save_fa(
-            f"{self.a['folder_stem']}/consensus_sequences/{out_fname.split('/')[-1]}", f">{self.a['ExpName']}_{in_fname.split('/')[-1].split('_')[0]}_consensus_MinDepth{self.a['ConsensusMinD']}\n{''.join(cons['con'].tolist())}")
+            f"{self.a['folder_stem']}/consensus_sequences/{out_fname.split('/')[-1]}", f">{fasta_header}\n{''.join(cons['con'].tolist())}")
         loginfo(
             f"INFO: Consensus sequence saved to {self.a['folder_stem']}/consensus_sequences/")
 
