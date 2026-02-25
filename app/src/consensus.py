@@ -464,8 +464,7 @@ class Consensus:
         self.coverage = pd.read_csv(io.StringIO(shell(f"samtools coverage '{self.fnames['master_bam']}'", "Coverage, consensus filter bam", ret_output=True).decode(
         )), sep="\t")
         assert not self.coverage.empty, "Call to samtools coverage returned empty output. Check that your bam file is indexed and that the path to it is correct."
-        self.coverage["#rname"] = self.coverage.apply(
-            lambda x: x["#rname"][0:100].lower(), axis=1)  # TODO < Curtailment
+        self.coverage["#rname"] = self.coverage["#rname"].str.lower()
 
         for key in self.grouped_reads.keys():
             self.filter_bam(key)
