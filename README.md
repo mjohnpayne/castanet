@@ -19,11 +19,12 @@ Described in Mayne, R., Secret., S., Geoghegan, C., et al. (2024) Castanet: a pi
 
 <a href="https://hub.docker.com/r/mayne941/castanet"><img src="docs/docker-mark-blue.png" alt="drawing" width="25" /> Try Castanet with Docker @ DockerHub</a>
 
-# New in V9.2.0
+# New in V9.2
 1. Extensions to consensus generator algorithm to allow for greater precision in deconvolving similar sequences
 1. Mapping reference creator now has extended functionality and user guidance
 1. Docker container refresh with simplified build
 1. Fix for bug using postfilt option in batch mode
+1. Additional CLI support for new mapping ref scheme functions (thanks @mjohnpayne)
 1. Extended support for ONT users
 1. Wiki updates
 
