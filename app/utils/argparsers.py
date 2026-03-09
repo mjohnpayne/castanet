@@ -51,6 +51,8 @@ def parse_arguments_lite():
                         help="If True, use Trimmomatic to remove adapters and low quality sequences.")
     parser.add_argument('-DoConsensus', required=False, default=True, type=str,
                         help="If True, run the Castanet consensus sequence pipeline stage.")
+    parser.add_argument('-PostFilt', required=False, default=False, type=str,
+                        help="If True, postfilter to remove reads marked as contaminated.")
     parser.add_argument('-Mapper', required=False,
                         default="bwa", help="Pass API arg in via shell.")
     parser.add_argument('-NThreads', required=False, default=1, type=int,
