@@ -19,14 +19,9 @@ Described in Mayne, R., Secret., S., Geoghegan, C., et al. (2024) Castanet: a pi
 
 <a href="https://hub.docker.com/r/mayne941/castanet"><img src="docs/docker-mark-blue.png" alt="drawing" width="25" /> Try Castanet with Docker @ DockerHub</a>
 
-# New in V9.2
-1. Extensions to consensus generator algorithm to allow for greater precision in deconvolving similar sequences
-1. Mapping reference creator now has extended functionality and user guidance
-1. Docker container refresh with simplified build
-1. Fix for bug using postfilt option in batch mode
-1. Additional CLI support for new mapping ref scheme functions (thanks @mjohnpayne)
-1. Extended support for ONT users
-1. Wiki updates
+# New in V9.3
+1. Bug fixes:
+    * Mafft version pinned to 7.505 to avoid segfaults in some edge cases
 
 # [Documentation](https://github.com/MultipathogenGenomics/castanet/wiki)
 Castanet documentation is hosted on our [GitHub Wiki Page](https://github.com/MultipathogenGenomics/castanet/wiki)
@@ -64,12 +59,19 @@ Dotted lines indicate optional pipeline stages.
     * Running multiple Castanet jobs in parallel via CLI could cause issues with re-indexing the refstem
     * Added error handling to prevent users from inserting non-printable characters in API arguments
     * Summary statistics for batch runs now aggregate correctly in nested folders
+    * Fix for bug using postfilt option in batch mode
 1. Docker container updated with latest version
 1. Consensus algorithm enhancements to give more representative results with highly diverse/recombination-prone viruses
 1. Post filter option for removing uniquely-mapping reads (uses include removal of index hopping reads)
 1. BAM parsing enhancements for compute time and memory footprint.
 1. Parameterised "debug mode", where if False no intermediate files are generated (cleaner output to save space, esp. for use on shared infrastructure)
 1. Test suite updates
+1. Extensions to consensus generator algorithm to allow for greater precision in deconvolving similar sequences
+1. Mapping reference creator now has extended functionality and user guidance
+1. Docker container refresh with simplified build
+1. Additional CLI support for new mapping ref scheme functions (thanks @mjohnpayne)
+1. Extended support for ONT users
+1. Wiki updates
 
 
 ## Version 8, 20/12/24

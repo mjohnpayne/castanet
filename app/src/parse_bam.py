@@ -131,6 +131,7 @@ class Parse_bam_positions:
             with open(self.fnames["delreads"], "w") as f:
                 [f.write(f"{v[0][1]}\n") for v in dat.values()
                  if len(v) <= self.minimum_n_filter]
+
             out = shell(
                 f"samtools view -@ {self.p['NThreads']} -b -N {self.fnames['delreads']} {self.fnames['bam']} > {self.fnames['bamfilt']}", is_test=True)
             error_handler_cli(out, self.fnames['bamfilt'], "samtools")
