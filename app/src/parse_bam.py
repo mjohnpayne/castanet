@@ -129,12 +129,10 @@ class Parse_bam_positions:
 
             '''Kill original BAM and replace with one that's been filtered'''
             with open(self.fnames["delreads"], "w") as f:
-                [f.write(f"{v[0][1]}\n") for v in dat.values()
-                 if len(v) <= self.minimum_n_filter]
+                [f.write(f"{v[0][1]}\n") for v in dat.values()]
 
-            out = shell(
+            _ = shell(
                 f"samtools view -@ {self.p['NThreads']} -b -N {self.fnames['delreads']} {self.fnames['bam']} > {self.fnames['bamfilt']}", is_test=True)
-            error_handler_cli(out, self.fnames['bamfilt'], "samtools")
             os.remove(self.fnames['bam'])
             os.rename(self.fnames['bamfilt'], self.fnames['bam'])
             os.remove(self.fnames['delreads'])
