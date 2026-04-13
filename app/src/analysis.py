@@ -80,11 +80,8 @@ class Analysis:
 
         pdf["organism"] = pdf.apply(lambda x: self.lut[self.lut["key"] == x["target_id"].split(
             "_")[-1]]["organism"].iloc[0], axis=1)
-        # pdf['genename'] = pdf.target_id.apply( ###################################################
-        #     lambda x: x.replace('_', '-').split('-')[0]) # TODO < Changed 9.1.0
         pdf['genename'] = pdf.target_id.str.lower().apply(
             lambda x: x.split("_")[0])
-        # pdf['genename'] = pdf['genename'].str.lower()
 
         pdf["genename"] = pdf.apply(lambda x: x["genename"].lower(), axis=1)
         '''More precise definition for the different virus types'''

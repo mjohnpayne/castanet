@@ -22,6 +22,7 @@ Described in Mayne, R., Secret., S., Geoghegan, C., et al. (2024) Castanet: a pi
 # New in V9.3
 1. Bug fixes:
     * Mafft version pinned to 7.505 to avoid segfaults in some edge cases
+    * Removed unnecesasry double filtering in postfilt function
 
 # [Documentation](https://github.com/MultipathogenGenomics/castanet/wiki)
 Castanet documentation is hosted on our [GitHub Wiki Page](https://github.com/MultipathogenGenomics/castanet/wiki)
