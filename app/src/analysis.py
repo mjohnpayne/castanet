@@ -43,6 +43,7 @@ class Analysis:
         except:
             stoperr(
                 f'Failed to read probe information. Is {self.a["RefStem"]} a valid multifasta file?')
+
         probelengths_mod = self.add_probetype(probelengths)
         self.df = self.df.merge(
             probelengths_mod, left_on='target_id', right_on='target_id', how='left')
@@ -80,6 +81,8 @@ class Analysis:
 
         pdf["organism"] = pdf.apply(lambda x: self.lut[self.lut["key"] == x["target_id"].split(
             "_")[-1]]["organism"].iloc[0], axis=1)
+        pdf["rmlst"] = pdf.apply(lambda x: self.lut[self.lut["key"] == x["target_id"].split(
+            "_")[-1]]["rmlst"].iloc[0], axis=1)
         pdf['genename'] = pdf.target_id.str.lower().apply(
             lambda x: x.split("_")[0])
 
@@ -142,19 +145,14 @@ class Analysis:
                 return s
             return name
 
+        '''Append and apply horizontal aggregation keys (i.e. rmlst)'''
+        pdf["tmp"] = pdf.apply(lambda x: x["rmlst"] + "_" + x["probetype"]
+                               if str(x["rmlst"]).startswith("bact0") else x["probetype"], axis=1)
+        pdf["genename"] = pdf["tmp"]
+
         pdf.loc[pdf.genename.str.startswith('bact'), 'probetype'] = pdf.loc[pdf.genename.str.startswith(
             'bact')].target_id.apply(_pat_search)
 
-        # TODO < RM removed with v9.0 as possibly not needed now
-        # '''Streptococcus mitis group (pneumo, mitis, oralis) are cross-mapping, so classify as S. pneumoniae all targets that are found in S.pneumo at least once in the database'''
-        # pdf.loc[(pdf.target_id.apply(lambda x: 'pneumoniae' in x)) & (pdf.probetype.isin(('streptococcus_pneumoniae',
-        #                                                                                   'streptococcus_pseudopneumoniae', 'streptococcus_mitis', 'streptococcus_oralis'))), 'probetype'] = 'streptococcus_pneumoniae'
-        # '''Streptococcus_agalactiae and Streptococcus_pyogenes cross-map as well, aggregate them'''
-        # pdf.loc[(pdf.target_id.apply(lambda x: 'pyogenes' in x or 'agalactiae' in x)) & (pdf.probetype.isin(
-        #     ('Streptococcus_pyogenes', 'Streptococcus_agalactiae'))), 'probetype'] = 'streptococcus_agalactiae_pyogenes'
-        # '''Enterobacteriacae are not distinguishable at this level so group them all'''
-        # pdf.loc[pdf.probetype.apply(lambda x: x.startswith('escherichia') or x.startswith(
-        #     'klebsiella') or x.startswith('enterobacter')), 'probetype'] = 'enterobacteriaceae'
         loginfo(
             f'Organism and gene summary: {pdf.organism.nunique()} organisms, up to {pdf.groupby("probetype").probetype.nunique().max()} aggregation levels (probetype) each.')
         pdf.to_csv(f"{self.output_dir}/probe_aggregation.csv")

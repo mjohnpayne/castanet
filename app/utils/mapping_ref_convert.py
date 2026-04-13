@@ -89,7 +89,7 @@ class MappingRefConverter:
     def save_output(self, df, fasta) -> None:
         if not self.sneaky_mode:
             '''Save CSV'''
-            df[["organism", "probetype", "description", "rmlst", "key"]].to_csv(
+            df[["organism", "probetype", "description", "key", "rmlst"]].to_csv(
                 f"{self.out_file}", index=False)
         else:
             if not os.path.exists(f"{self.payload['SaveDir']}/{self.payload['ExpName']}/"):
@@ -97,14 +97,14 @@ class MappingRefConverter:
                     f"{self.payload['SaveDir']}/{self.payload['ExpName']}/")
             self.payload["MappingRefTable"] = f"{self.payload['SaveDir']}/{self.payload['ExpName']}/MappingRefTable.csv"
             df = df.applymap(lambda s: s.lower() if type(s) == str else s)
-            df[["organism", "probetype", "description", "key"]].to_csv(
+            df[["organism", "probetype", "description", "key", "rmlst"]].to_csv(
                 self.payload["MappingRefTable"], index=False)
             with open(self.out_file, "w") as f:
                 for header, seq in fasta:
                     f.write(f"{header}\n{seq}\n")
 
     def validate_user_csv(self, df):
-        if df.isnull().values.any():
+        if df[["organism", "probetype", "key"]].isnull().values.any():
             stoperr(f"Your input MappingRefTable has empty values in the probetype and/or description columns. "
                     f"Castanet can't proceed as it needs names for each target we map to. "
                     f"Please manually edit these, or re-generate the mapping reference with the /convert_mapping_ref/ function.")
