@@ -29,6 +29,13 @@ class Analysis:
         self.df = error_handler_analysis(self.a)
         self.df["target_id"] = self.df["target_id"].str.lower()
         self.lut = pd.read_csv(self.a["MappingRefTable"], index_col=False)
+        self.probe_regexes = [
+            re.compile(r'bact[0-9]+\_[\s\S]*'),
+            # re.compile(r'bact[0-9]+_([A-Za-z]+)-[0-9]+[-_]([A-Za-z]+)'),
+            # re.compile(r'bact[0-9]+_[0-9]+_([A-Za-z]+_[A-Za-z_]+)'),
+            # re.compile(r'bact[0-9]+_([a-z]+_[a-z_]+)'),
+            # re.compile(r'bact[0-9]+_([A-Za-z]+)-[0-9]+')
+        ]
 
     def add_probelength(self):
         '''Add length of target_id to each row of master df after splitting probelength data.'''
@@ -69,18 +76,53 @@ class Analysis:
             else:
                 return row["target_id"]
 
+        def _pat_search(s):
+            '''Private function to return empty string instead of error when pattern is not matched.'''
+            try:
+                res = self.probe_regexes[0].findall(s)
+                if not res:
+                    res = (self.probe_regexes[1].findall(s),)
+                    if not res[0]:
+                        has_cluster = re.search(r'_cluster_[0-9]+', s)
+                        if has_cluster:
+                            pat = has_cluster[0]
+                            s = f"{s.replace(pat, '')}"
+
+                        res = (self.probe_regexes[2].findall(s),)
+                        if not res[0]:
+                            res = (self.probe_regexes[3].findall(s),)
+                if not res[0]:
+                    return ''
+                # name = '_'.join(res[0]) # TODO < OLD
+                name = res[0]  # TODO <NEW
+
+                if name[-1] == "_":
+                    # Fix for old probe set with random trailing _'s
+                    name = name[:-1]
+
+            except Exception as e:
+                logerr(
+                    f"Castanet couldn't parse one or more of your probe names. Please ensure you've converted it to Castanet format with the /convert_mapping_reference/ endpoint and that input format was consistent with the format expected (see documentation).\n{s}\n{e}")
+                return s
+            return name
+
         '''Apply normalisation to both probe and master dataframes to allow for different probe name conventions'''
         pdf['orig_target_id'] = pdf['target_id'].copy()
         pdf['orig_target_id'] = pdf.apply(
             lambda x: trim_long_fpaths(x["orig_target_id"]), axis=1)
         pdf['target_id'] = pdf['target_id'].str.lower()
-        pdf["target_id"] = pdf.apply(
-            lambda x: fix_rmlst(x), axis=1)
-        self.df["target_id"] = self.df.apply(
-            lambda x: fix_rmlst(x), axis=1)
+        # pdf["target_id"] = pdf.apply( # TODO < OLD
+        #     lambda x: fix_rmlst(x), axis=1)
+        # self.df["target_id"] = self.df.apply(
+        #     lambda x: fix_rmlst(x), axis=1)
 
-        pdf["organism"] = pdf.apply(lambda x: self.lut[self.lut["key"] == x["target_id"].split(
-            "_")[-1]]["organism"].iloc[0], axis=1)
+        tmp = pdf["target_id"].str.split("_", n=1, expand=True)
+        pdf["key"] = tmp[1].astype(str)
+        self.lut["key"] = self.lut["key"].astype(str)
+
+        pdf["organism"] = pdf.apply(
+            lambda x: self.lut[self.lut["key"] == x["key"]]["organism"].iloc[0], axis=1)
+
         pdf["rmlst"] = pdf.apply(lambda x: self.lut[self.lut["key"] == x["target_id"].split(
             "_")[-1]]["rmlst"].iloc[0], axis=1)
         pdf['genename'] = pdf.target_id.str.lower().apply(
@@ -106,60 +148,26 @@ class Analysis:
                                                                          'paramyxoviridae'].target_id.apply(lambda x: '_'.join(x.replace('_', '-').split('-')[:2]))
         pdf.loc[pdf.genename == 'parvoviridae', 'genename'] = pdf.loc[pdf.genename ==
                                                                       'parvoviridae'].target_id.apply(lambda x: '_'.join(x.replace('_', '-').split('-')[:2]))
-        pdf['probetype'] = pdf.genename
-        pdf["probetype"] = pdf["probetype"].str.lower()
-
-        probe_regexes = [
-            re.compile(r'bact[0-9]+_([A-Za-z]+)-[0-9]+[-_]([A-Za-z]+)'),
-            re.compile(r'bact[0-9]+_[0-9]+_([A-Za-z]+_[A-Za-z_]+)'),
-            re.compile(r'bact[0-9]+_([a-z]+_[a-z_]+)'),
-            re.compile(r'bact[0-9]+_([A-Za-z]+)-[0-9]+')
-        ]
-
-        def _pat_search(s):
-            '''Private function to return empty string instead of error when pattern is not matched.'''
-            try:
-                res = probe_regexes[0].findall(s)
-                if not res:
-                    res = (probe_regexes[1].findall(s),)
-                    if not res[0]:
-                        has_cluster = re.search(r'_cluster_[0-9]+', s)
-                        if has_cluster:
-                            pat = has_cluster[0]
-                            s = f"{s.replace(pat, '')}"
-
-                        res = (probe_regexes[2].findall(s),)
-                        if not res[0]:
-                            res = (probe_regexes[3].findall(s),)
-                if not res[0]:
-                    return ''
-                name = '_'.join(res[0])
-
-                if name[-1] == "_":
-                    # Fix for old probe set with random trailing _'s
-                    name = name[:-1]
-
-            except Exception as e:
-                logerr(
-                    f"Castanet couldn't parse one or more of your probe names. Please ensure you've converted it to Castanet format with the /convert_mapping_reference/ endpoint and that input format was consistent with the format expected (see documentation).\n{s}\n{e}")
-                return s
-            return name
 
         '''Append and apply horizontal aggregation keys (i.e. rmlst)'''
-        pdf["tmp"] = pdf.apply(lambda x: x["rmlst"] + "_" + x["probetype"]
-                               if str(x["rmlst"]).startswith("bact0") else x["probetype"], axis=1)
-        pdf["genename"] = pdf["tmp"]
+        pdf['probetype'] = pdf.genename.str.lower()
+        pdf["genename"] = pdf.apply(lambda x: x["rmlst"] if str(
+            x["rmlst"]).startswith("bact0") else x["organism"], axis=1)
+        pdf["AGGREGATE"] = pdf.apply(lambda x: f'{x["rmlst"]}_{x["target_id"].split("_")[0]}' if str(
+            x["rmlst"]).startswith("bact0") else x["target_id"].split("_")[0], axis=1)
 
-        pdf.loc[pdf.genename.str.startswith('bact'), 'probetype'] = pdf.loc[pdf.genename.str.startswith(
-            'bact')].target_id.apply(_pat_search)
+        # pdf.loc[pdf.genename.str.startswith('bact'), 'probetype'] = pdf.loc[pdf.genename.str.startswith(
+        #     'bact')].AGGREGATE.apply(_pat_search) # TODO OLD was target_id
+        # breakpoint() #########
 
         loginfo(
-            f'Organism and gene summary: {pdf.organism.nunique()} organisms, up to {pdf.groupby("probetype").probetype.nunique().max()} aggregation levels (probetype) each.')
+            f'Organism and gene summary: {pdf.organism.nunique()} organisms, up to {pdf.groupby("probetype").probetype.nunique().max()} aggregation levels (probetype) each and up to {pdf.groupby("probetype").genename.nunique().max()} genes each.')
         pdf.to_csv(f"{self.output_dir}/probe_aggregation.csv")
 
         if pdf[pdf["probetype"] == ""].shape[0] > 0:
             logerr(
                 f"Failure decoding the name of one or more probe types: \n {pdf[pdf['probetype'] == '']} \n Please check your probe naming conventions are compatible with Castanet")
+
         return pdf
 
     def add_depth(self, probelengths):
@@ -195,6 +203,8 @@ class Analysis:
             loginfo(
                 'INFO: Calculating read depth statistics for all probes, for all samples.')
             for (sampleid, probetype, organism), g in self.df.groupby(['sampleid', 'probetype', 'organism']):
+                # for (sampleid, probetype, orig_probetype, organism), g in self.df.groupby(['sampleid', 'AGGREGATE', "probetype", 'organism']):
+                orig_probetype = probetype
                 gene_list = g.genename.unique()
                 n_genes = len(gene_list)
                 target_list = g.target_id.unique()
@@ -208,7 +218,7 @@ class Analysis:
                     for target_id, gt in gg.groupby('target_id'):
                         try:
                             '''Don't give the user the hashed header name, it will only upset them'''
-                            sneaky_name = f'{target_id.split("_")[0]}_{self.lut[self.lut["key"] == target_id.split("_")[-1]]["description"].item()[0:100]}'
+                            sneaky_name = f'{target_id.split("_")[0]}_{self.lut[self.lut["key"] == target_id.split("_")[-1]]["description"].item()[0:100]}'  # TODO < OLD
                         except TypeError:
                             '''If user has somehow broken fasta header'''
                             sneaky_name = f'{target_id.split("_")[0]}'
@@ -241,16 +251,18 @@ class Analysis:
                            'constant', constant_values=0)
                 D1 = np.pad(D1, (0, nmax_probetype - npos),
                             'constant', constant_values=0)
-                loginfo(f'Mean depth (all reads) for {probetype}: {D.mean()}')
+
                 loginfo(
-                    f'Mean depth (deduplicated) for {probetype}: {D1.mean()}')
+                    f'Mean depth (all reads) for {orig_probetype}: {D.mean()}')
+                loginfo(
+                    f'Mean depth (deduplicated) for {orig_probetype}: {D1.mean()}')
                 '''Amplification rate calculations use the unpadded (mapped) number of sites as the denominator'''
                 loginfo(
-                    f'Mean amplification ratio for {probetype}: {amprate.mean()}')
+                    f'Mean amplification ratio for {orig_probetype}: {amprate.mean()}')
 
                 if self.a["DebugMode"]:
                     '''Save arrays as CSV'''
-                    with open(f'{odir}/{probetype}-{sampleid}_depth_by_pos.csv', 'a') as o:
+                    with open(f'{odir}/{orig_probetype}-{sampleid}_depth_by_pos.csv', 'a') as o:
                         np.savetxt(o, D, fmt='%d', newline=',')
                         o.write('\n')
                         np.savetxt(o, D1, fmt='%d', newline=',')
@@ -262,11 +274,11 @@ class Analysis:
                     plot_df["position"], plot_df["All Reads"], plot_df["Deduplicated Reads"] = np.arange(
                         0, D.shape[0]), D, D1
                     fig = px.line(plot_df, x="position", y=[
-                                  "All Reads", "Deduplicated Reads"], title=f'{sampleid}\n{probetype} ({n_targets}/{nmax_targets} targets in {n_genes}/{nmax_genes} genes)',
+                                  "All Reads", "Deduplicated Reads"], title=f'{sampleid}\n{orig_probetype} ({n_targets}/{nmax_targets} targets in {n_genes}/{nmax_genes} genes)',
                                   labels={"position": "Position", "value": "Num Reads"})
                     fig.update_layout(legend={"title_text": "", "orientation": "h", "entrywidth": 100,
                                       "yanchor": "bottom", "y": 1.02, "xanchor": "right", "x": 1})
-                    fig.write_image(f'{odir}/{probetype}-{sampleid}.png')
+                    fig.write_image(f'{odir}/{orig_probetype}-{sampleid}.png')
 
                 '''Build up dictionary of depth metrics for this sample and probetype'''
                 metrics[sampleid, probetype, organism] = (g.n.sum(), g.n.count(), n_targets, n_genes, nmax_targets, nmax_genes, nmax_probetype, npos,
@@ -306,7 +318,7 @@ class Analysis:
                                                  'npos_dedup_cov_mindepth100',
                                                  'npos_dedup_cov_mindepth1000']).T.reset_index()
             depth.rename(columns={'level_0': 'sampleid',
-                         'level_1': 'probetype',
+                         'level_1': 'AGGREGATE',
                                   'level_2': "organism"}, inplace=True)
 
             '''Add reads on target (rot)'''
@@ -438,11 +450,14 @@ class Analysis:
     def read_coverage_chart(self):
         df = pd.read_csv(
             f"{self.output_dir}{self.a['ExpName']}_depth.csv")
+
+        df = df.rename(columns={"AGGREGATE": "probetype"})
         all_cov = {}
         df.apply(lambda x: self.get_cov(x, all_cov), axis=1)
         df_cov = pd.DataFrame(all_cov).T
         df_cov = df_cov.reindex(sorted(df_cov.columns), axis=1)
         df_cov.to_csv(f"{self.output_dir}{self.a['ExpName']}_coverage.csv")
+        df.to_csv(f"{self.output_dir}{self.a['ExpName']}_depth.csv")
 
     def main(self):
         '''Entrypoint. Extract & merge probe lengths, reassign dupes if specified, then call anlysis & save'''

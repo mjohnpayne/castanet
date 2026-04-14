@@ -53,6 +53,7 @@ class MappingRefConverter:
                     f"Fasta entry {fasta[0]} has no sequence associated with it. Please check your file is a valid FASTA.")
         df = pd.DataFrame({"organism": organisms, "probetype": agg_headers,
                            "description": descriptions, "sequence": seqs, "rmlst": rmlst})
+
         return df
 
     def input_checks(self, df) -> pd.DataFrame:
