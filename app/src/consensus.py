@@ -6,6 +6,7 @@ import pickle as p
 from Bio import AlignIO
 from collections import Counter
 import plotly.express as px
+import re
 
 from app.utils.timer import timing
 from app.utils.shell_cmds import shell, make_dir, loginfo, stoperr, logerr
@@ -65,7 +66,8 @@ class Consensus:
         is_regex = False
         if len(tar_name) > 99:
             is_regex = True
-            match_name = f"(^|\s){tar_name[0:100]}($|\s)"
+            prefix = re.escape(tar_name[:100])
+            match_name = f"(^|\s){prefix}(\d*)($|\s)"
         else:
             match_name = tar_name
 
@@ -96,8 +98,12 @@ class Consensus:
             '''Else, call consensus on this target'''
             if not tar_name in self.subconsensuses.keys():
                 self.subconsensuses[tar_name] = []
-            self.subconsensuses[tar_name].append(
-                f"{self.naive_consensuses[tar_name]}")
+            if tar_name in self.naive_consensuses.keys():
+                self.subconsensuses[tar_name].append(
+                    f"{self.naive_consensuses[tar_name]}")
+            elif tar_name[:100] in self.naive_consensuses.keys():
+                self.subconsensuses[tar_name].append(
+                    f"{self.naive_consensuses[tar_name[:100]]}")
 
     def collate_consensus_seqs(self, tar_name) -> None:
         '''Read and collate consensus seqs from per target to per organism'''
@@ -231,7 +237,7 @@ class Consensus:
 
     def build_msa_requisites(self, org_name) -> None:
         '''Create fasta files containing target reference seqs and consensus seqs, for downstream MSA'''
-        ref_seq_names = list(set([i["tar_name"].replace(">", "").lower()
+        ref_seq_names = list(set([i["tar_name"].replace(">", "").lower()[:100]
                                   for i in self.target_consensuses[org_name]]))
         ref_seqs = [ref for ref in self.refs if ref[0].replace(
             ">", "").split(" ")[0].lower() in ref_seq_names]
@@ -332,7 +338,8 @@ class Consensus:
         '''Output coverage stats for target consensuses'''
         probels = self.probe_names[self.probe_names['probetype']
                                    == org_name]['orig_target_id'].str.lower().tolist()
-        coverage_df = self.coverage[self.coverage['#rname'].isin(probels)]
+        coverage_df = self.coverage[
+            self.coverage["#rname"].isin(probels) | self.coverage["#rname"].str.startswith(tuple(probels), na=False)]
         assert not coverage_df.empty, f"Call to samtools coverage returned empty output. Check that your bam file is indexed and that the path to it is correct."
 
         '''Get coverage for each consensus, filter collated bam by consensus coverage and map q'''
