@@ -61,49 +61,6 @@ class Analysis:
         '''
         loginfo('Aggregating by organism and gene name.')
 
-        # def fix_rmlst(row): # TODO < DEPRECATED AS OF 9.3
-        #     '''Converts any name with rmlst "BACT0xxx" name to Castanet format (where BACT leads title)'''
-        #     row["target_id"] = re.sub(
-        #         r'true_', '', row["target_id"])  # Fix for 2018 probe set proclivity for true_ pattern
-        #     if "bact0" in str(row["target_id"]).lower():
-        #         if row.target_id.split("bact0")[-1][0:3] == "000":
-        #             '''if BACT is last part of name'''
-        #             pat = f'bact{"".join(row.target_id.split("bact0")[-1:])}_{"".join(row.target_id.split("bact0")[:-1])[:-1]}'
-        #         else:
-        #             pat = f'bact{"".join(row.target_id.split("bact0")[1:])}'
-        #         return pat.replace("__", "_")
-        #     else:
-        #         return row["target_id"]
-
-        # def _pat_search(s):
-        #     '''Private function to return empty string instead of error when pattern is not matched.'''
-        #     try:
-        #         res = self.probe_regexes[0].findall(s)
-        #         if not res:
-        #             res = (self.probe_regexes[1].findall(s),)
-        #             if not res[0]:
-        #                 has_cluster = re.search(r'_cluster_[0-9]+', s)
-        #                 if has_cluster:
-        #                     pat = has_cluster[0]
-        #                     s = f"{s.replace(pat, '')}"
-
-        #                 res = (self.probe_regexes[2].findall(s),)
-        #                 if not res[0]:
-        #                     res = (self.probe_regexes[3].findall(s),)
-        #         if not res[0]:
-        #             return ''
-        #         name = res[0]
-
-        #         if name[-1] == "_":
-        #             # Fix for old probe set with random trailing _'s
-        #             name = name[:-1]
-
-        #     except Exception as e:
-        #         logerr(
-        #             f"Castanet couldn't parse one or more of your probe names. Please ensure you've converted it to Castanet format with the /convert_mapping_reference/ endpoint and that input format was consistent with the format expected (see documentation).\n{s}\n{e}")
-        #         return s
-        #     return name
-
         '''Apply normalisation to both probe and master dataframes to allow for different probe name conventions'''
         pdf['orig_target_id'] = pdf['target_id'].copy()
         pdf['orig_target_id'] = pdf.apply(
@@ -347,43 +304,15 @@ class Analysis:
             f'Mean read depth per sample: \n{depth.groupby("sampleid").depth_mean.mean().to_string()}')
         return depth
 
-    # def add_clin(self, req_cols_clin=['pt', 'clin_int']): % TODO < DEPRECATED AS OF 9.3
-    #     '''Merge to create simpler metadata for each sample, including patient ID and clinical category.
-    #     Clin file may additionally supply clinical/demographic data,
-    #     with at least the following columns: {}'''.format(req_cols_clin)
-    #     clin = pd.read_csv(self.a["Clin"], dtype={'pt': str})
-    #     if 'pt' not in clin.columns:
-    #         stoperr(
-    #             f'Clin file {self.a["Clin"]} must contain at least the following columns: {req_cols_clin}')
-    #     if 'sampleid' in clin.columns:
-    #         logerr(
-    #             f'Ignoring "sampleid" column from clinical info file {self.a["Clin"]}.')
-    #         clin.drop('sampleid', axis=1, inplace=True)
-    #         '''Merge sample information with participant data'''
-    #         samples = samples.merge(clin, on='pt', how='left')
-    #     return samples
-
     def add_read_d_and_clin(self, depth):
         ''' Add raw read numbers and any external categorical/clinical data.
         If specified, samples file must supply at least the following columns: {}.
         If not specified, infer raw read num from input bam (assumes no prior filtering!!)'''
         loginfo('Adding sample information and clinical data.')
-        # if self.a["SamplesFile"] != "":
-        #     loginfo(
-        #         f"Reading raw read number from supplied file {self.a['SamplesFile']}")
-        #     try:
-        #         samples = pd.read_csv(self.a["SamplesFile"])
-        #     except Exception as ex:
-        #         raise FileNotFoundError(
-        #             f"Couldn't open your samples file: {self.a['SamplesFile']} with exception: {ex}")
-        # else:
         read_num = get_read_num(self.a, self.bam_fname)
         samples = pd.DataFrame(
             [{"sampleid": str(self.a["ExpName"]), "pt": "", "rawreadnum": read_num}])
 
-        # if self.a["Clin"] != "":
-        #     '''If supplied, merge clinical data'''
-        #     samples = self.add_clin(samples)
         depth['sampleid'] = depth['sampleid'].astype(str)
         samples['sampleid'] = samples['sampleid'].astype(str)
         '''Merge read n (and clin data if supplied) to depth counts, return'''
