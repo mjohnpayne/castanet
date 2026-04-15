@@ -20,9 +20,13 @@ Described in Mayne, R., Secret., S., Geoghegan, C., et al. (2024) Castanet: a pi
 <a href="https://hub.docker.com/r/mayne941/castanet"><img src="docs/docker-mark-blue.png" alt="drawing" width="25" /> Try Castanet with Docker @ DockerHub</a>
 
 # New in V9.3
+1. Aggregation to rMLST genes has been re-implemented using the new mapping reference table scheme. See Wiki for more details.
+1. Explicit error handling added to consensus generator
 1. Bug fixes:
     * Mafft version pinned to 7.505 to avoid segfaults in some edge cases
     * Removed unnecesasry double filtering in postfilt function
+    * Consensus sequence header bug with double ">" fixed
+    * Groupedreads.p is now deleted from the user's experiment archives unless debug mode is enabled, to save drive space
 
 # [Documentation](https://github.com/MultipathogenGenomics/castanet/wiki)
 Castanet documentation is hosted on our [GitHub Wiki Page](https://github.com/MultipathogenGenomics/castanet/wiki)

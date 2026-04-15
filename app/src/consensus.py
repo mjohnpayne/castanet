@@ -17,6 +17,10 @@ from app.utils.basic_cli_calls import (
 from app.utils.error_handlers import error_handler_cli
 from app.utils.similarity_graph import call_graph
 
+import warnings
+# Pandas zero div errors
+warnings.simplefilter(action='ignore', category=RuntimeWarning)
+
 
 class Consensus:
     '''Take all targets in one probetype/species aggregation, call consensus for each,
@@ -32,7 +36,11 @@ class Consensus:
         self.probe_names = pd.read_csv(
             f"{self.a['SaveDir']}/{self.a['ExpName']}/probe_aggregation.csv")
         self.fnames = get_consensus_fnames(self.a)
-        self.grouped_reads = p.load(open(self.fnames["grouped_reads"], "rb"))
+        try:
+            self.grouped_reads = p.load(
+                open(self.fnames["grouped_reads"], "rb"))
+        except:
+            stoperr(f"Failed to load groupedreads.p. To save space, this file is DELTED after running the consensus algorithm if debugmode = False. Please re-run the pipeline, selecting debug mode on if you wish to run the consensus algorithm several times.")
         self.grouped_reads_keep = {}
         self.subconsensuses = {}
         if start_with_bam:
@@ -230,8 +238,7 @@ class Consensus:
                 return ('', np.nan)
 
             try:
-                just_measured_bases = s[-int(len(s))
-                                             :].lower().replace("-", "").replace("n", "")
+                just_measured_bases = s[-int(len(s)):].lower().replace("-", "").replace("n", "")
                 consbase, consnum = Counter(
                     just_measured_bases).most_common()[0]
 
@@ -389,9 +396,11 @@ class Consensus:
         '''Remove intermediate files to save disc space'''
         rm(f"{self.fnames['collated_reads_fastq']}")
         rm(f"{self.fnames['temp_folder']}", "-r")
-        # rm(f"{self.fnames['grouped_reads']}") # RM < TODO Unclear if this should be cleared only on debug = False??
-        # find_and_delete(
-        #     f"{self.a['folder_stem']}grouped_reads/", "*.bam")
+        if not self.a["DebugMode"]:
+            # RM < TODO Should probably remove grouped reads if debug mode off???
+            rm(f"{self.fnames['grouped_reads']}")
+            # find_and_delete(
+            #     f"{self.a['folder_stem']}grouped_reads/", "*.bam")
 
     def generate_summary(self, org) -> None:
         try:
