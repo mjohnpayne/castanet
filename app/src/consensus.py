@@ -165,12 +165,9 @@ class Consensus:
             shell(f"rm -rf {organism_consensus_dir}")
             return
 
-        use_concat_refseq = False
         # TEST -- AGGREGATE
         if agg_names.shape[0] > 1:
-            # CONCAT THE BASTARDS
             # 0 Get list of targets per gene
-            filtered_targets = {}
             agg_refseq = ""
             all_subconsensuses = []
             genes = agg_names["AGGREGATE"].value_counts().index.tolist()
@@ -185,9 +182,6 @@ class Consensus:
                         tmp = target
                         tmp["refseq"] = [ref for ref in self.refs if ref[0].replace(
                             ">", "").split(" ")[0].lower() in ref_names][0][1]
-                        if not gene in filtered_targets.keys():
-                            filtered_targets[gene] = []
-                        filtered_targets[gene].append(target)
                         all_subconsensuses.append(
                             [f">{target['tar_name']}", target["consensus_seq"]])
 
@@ -197,6 +191,7 @@ class Consensus:
             # TODO << DAMN THIS IS MESSY. CLEANER TO MAKE LOTS OF FLAT CONSENSUSES THEN STICK THEM TOGETHER AFTER?
 
             # 2. Save concatenated refseq and cleaned subconsensuses for MSA
+            # TODO < HARMONISE WITH NAMES IN USUAL PATHWAY
             ref_aln_fnme = f"{self.a['folder_stem']}consensus_data/{org_name}/{org_name}_concat_refseq.fasta"
             flat_cons_seqs = f"{self.a['folder_stem']}consensus_data/{org_name}/{org_name}_concat_subconsensuses.fasta"
 
@@ -208,6 +203,7 @@ class Consensus:
             # 3 make alignment of concat refseq with
             out = shell(f"mafft --thread {self.a['NThreads']} --auto --addfragments {flat_cons_seqs} {ref_aln_fnme}"
                         f"> {self.a['folder_stem']}consensus_data/{org_name}/{org_name}_consensus_alignment.aln", is_test=True)
+            # TODO < TEST OUTPUT
 
             # 4 get flat consensus as per usual pathway
             flat_consensus = self.dumb_consensus_AGGREGATE(
@@ -221,9 +217,6 @@ class Consensus:
 
         save_fa(f"{self.a['folder_stem']}consensus_data/{org_name}/{org_name}_flat_consensus_sequence.fasta",
                 f">{org_name}_consensus\n{flat_consensus}")
-
-        # if agg_names.shape[0] > 1:
-        #     breakpoint()
 
         '''Remap to re-made flat consensus, to make `re-mapped consensus`'''
         self.remap_flat_consensus(org_name)
@@ -306,7 +299,7 @@ class Consensus:
                 return ('', np.nan)
 
             try:
-                just_measured_bases = s[-int(len(s))                                        :].lower().replace("-", "").replace("n", "")
+                just_measured_bases = s[-int(len(s)):].lower().replace("-", "").replace("n", "")
                 consbase, consnum = Counter(
                     just_measured_bases).most_common()[0]
 
