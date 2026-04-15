@@ -396,10 +396,7 @@ class Consensus:
         rm(f"{self.fnames['collated_reads_fastq']}")
         rm(f"{self.fnames['temp_folder']}", "-r")
         if not self.a["DebugMode"]:
-            # RM < TODO Should probably remove grouped reads if debug mode off???
             rm(f"{self.fnames['grouped_reads']}")
-            # find_and_delete(
-            #     f"{self.a['folder_stem']}grouped_reads/", "*.bam")
 
     def generate_summary(self, org) -> None:
         try:

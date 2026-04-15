@@ -81,21 +81,6 @@ class Parse_bam_positions:
     def save_hit_dbs(self):
         p.dump(self.reads_by_hit, open(
             self.fnames['grouped_reads'], "wb"), protocol=p.HIGHEST_PROTOCOL)
-        grp_aln_f = f"{self.p['SaveDir']}/{self.p['ExpName']}/grouped_reads/"
-        # TODO < Check exists, do with OS for safety
-        make_dir(f"mkdir {grp_aln_f}")
-
-        for key in self.reads_by_hit.keys():
-            '''Save list of grouped read QNAME ids for calling consensuses, if more than n reads'''
-            if len(self.reads_by_hit[key]) < self.n:  # TODO < Check still necessary
-                '''Don't save grouped reads if less than n'''
-                continue
-
-            short_key = trim_long_fpaths(key)
-            make_dir(f'mkdir "{grp_aln_f}{short_key}"')
-            with open(f"{grp_aln_f}{short_key}/{short_key}.lst", "w") as file:
-                [file.write(f"{self.reads_by_hit[key][i][0]}\n")
-                    for i in range(len(self.reads_by_hit[key]))]
 
     def get_reads(self):
         '''Read serialised BAM file into memory, create unique indexes for vectorised matching with filter list'''
