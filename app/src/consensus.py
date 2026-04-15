@@ -59,7 +59,6 @@ class Consensus:
             '''If user has somehow broken fasta header'''
             sneaky_name = f'{tar_name.split("_")[0]}'
         except ValueError:
-            # TODO < V9.2 fix, not accepting link to mapping ref
             stoperr(f"Castanet doesn't yet support calling a consensus sequence without you supplying a valid mapping reference table.")
         loginfo(f"Calling subconsensus for target: {sneaky_name}")
         tar_name = tar_name.lower()
