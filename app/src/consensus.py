@@ -142,7 +142,7 @@ class Consensus:
             shell(f"mkdir {organism_consensus_dir}")
 
         '''Filter bam to organism-specific targets, further filter by coverage %'''
-        coverage_filter = self.filter_bam_to_organism(org_name)
+        coverage_filter, agg_names = self.filter_bam_to_organism(org_name)
 
         if len(coverage_filter) == 0:
             loginfo(
@@ -159,10 +159,65 @@ class Consensus:
             shell(f"rm -rf {organism_consensus_dir}")
             return
 
-        self.build_msa_requisites(org_name)
-        flat_consensus = self.flatten_consensus(org_name)
+        use_concat_refseq = False
+        # TEST -- AGGREGATE
+        if agg_names.shape[0] > 1:
+            # CONCAT THE BASTARDS
+            # 0 Get list of targets per gene
+            filtered_targets = {}
+            agg_refseq = ""
+            all_subconsensuses = []
+            genes = agg_names["AGGREGATE"].value_counts().index.tolist()
+            genes.sort()
+            for gene in genes:
+                gene_targets = agg_names[agg_names["AGGREGATE"]
+                                         == gene]["target_id"].tolist()
+                for target in self.target_consensuses[org_name]:
+                    if target["tar_name"] in gene_targets:
+                        ref_names = list(set([i["tar_name"].replace(">", "").lower(
+                        ) for i in self.target_consensuses[org_name] if i["tar_name"] in target["tar_name"]]))
+                        tmp = target
+                        tmp["refseq"] = [ref for ref in self.refs if ref[0].replace(
+                            ">", "").split(" ")[0].lower() in ref_names][0][1]
+                        if not gene in filtered_targets.keys():
+                            filtered_targets[gene] = []
+                        filtered_targets[gene].append(target)
+                        all_subconsensuses.append(
+                            [f">{target['tar_name']}", target["consensus_seq"]])
+
+                # 1. Get each refseqs
+                agg_refseq += tmp['refseq']
+
+            # TODO << DAMN THIS IS MESSY. CLEANER TO MAKE LOTS OF FLAT CONSENSUSES THEN STICK THEM TOGETHER AFTER?
+
+            # 2. Save concatenated refseq and cleaned subconsensuses for MSA
+            ref_aln_fnme = f"{self.a['folder_stem']}consensus_data/{org_name}/{org_name}_concat_refseq.fasta"
+            flat_cons_seqs = f"{self.a['folder_stem']}consensus_data/{org_name}/{org_name}_concat_subconsensuses.fasta"
+
+            with open(f"{self.a['folder_stem']}consensus_data/{org_name}/{org_name}_concat_refseq.fasta", "w") as f:
+                [f.write(f">{gene}_concat_refseq\n{agg_refseq}\n")]
+            with open(f"{self.a['folder_stem']}consensus_data/{org_name}/{org_name}_concat_subconsensuses.fasta", "w") as f:
+                [f.write(f"{i[0]}\n{i[1]}\n") for i in all_subconsensuses]
+
+            # 3 make alignment of concat refseq with
+            out = shell(f"mafft --thread {self.a['NThreads']} --auto --addfragments {flat_cons_seqs} {ref_aln_fnme}"
+                        f"> {self.a['folder_stem']}consensus_data/{org_name}/{org_name}_consensus_alignment.aln", is_test=True)
+
+            # 4 get flat consensus as per usual pathway
+            flat_consensus = self.dumb_consensus_AGGREGATE(
+                f"{self.a['folder_stem']}consensus_data/{org_name}/", org_name)
+
+        else:
+            self.build_msa_requisites(org_name)
+
+            # TODO << harmonie flatten_consensus input to work with aggregate mode too
+            flat_consensus = self.flatten_consensus(org_name)
+
         save_fa(f"{self.a['folder_stem']}consensus_data/{org_name}/{org_name}_flat_consensus_sequence.fasta",
                 f">{org_name}_consensus\n{flat_consensus}")
+
+        # if agg_names.shape[0] > 1:
+        #     breakpoint()
 
         '''Remap to re-made flat consensus, to make `re-mapped consensus`'''
         self.remap_flat_consensus(org_name)
@@ -228,7 +283,13 @@ class Consensus:
         '''Return flat consensus'''
         return self.dumb_consensus(f"{self.a['folder_stem']}consensus_data/{org_name}/", org_name)
 
-    # @timing
+    def dumb_consensus_AGGREGATE(self, alnfpath, org_name) -> list:
+        '''Produce an un-referenced/`flat` consensus sequence for file of target and target ref seqs'''
+        from Bio.Align.AlignInfo import SummaryInfo
+        aln = AlignIO.read(
+            f"{alnfpath}{org_name}_consensus_alignment.aln", 'fasta')
+        return str(SummaryInfo(aln).dumb_consensus())
+
     def dumb_consensus(self, alnfpath, org_name) -> list:
         '''Produce an un-referenced/`flat` consensus sequence for file of target and target ref seqs'''
         def base_cons(s):
@@ -237,7 +298,7 @@ class Consensus:
                 return ('', np.nan)
 
             try:
-                just_measured_bases = s[-int(len(s)):].lower().replace("-", "").replace("n", "")
+                just_measured_bases = s[-int(len(s))                                        :].lower().replace("-", "").replace("n", "")
                 consbase, consnum = Counter(
                     just_measured_bases).most_common()[0]
 
@@ -263,7 +324,6 @@ class Consensus:
                           y=cluster_cons["ident"], title="Flat consensus identity")
             fig.write_image(
                 f"{alnfpath}{org_name}_flat_consensus_identity.png")
-
         return "".join(cluster_cons["cons"].tolist())
 
     def filter_bam_to_organism(self, org_name) -> list:
@@ -281,7 +341,7 @@ class Consensus:
         coverage_filter = coverage_df["#rname"].tolist()
 
         if len(coverage_filter) == 0:
-            return []
+            return [], pd.DataFrame()
         else:
             '''Filter master bam for targets with sufficient coverage'''
             probels = [f'{i}' for i in coverage_filter]
@@ -294,7 +354,13 @@ class Consensus:
             '''Estimate number of mapped reads in the final alignment (get just primary mapped reads, div 2 to average F & R strands)'''
             self.eval_stats[org_name]["filtered_collated_read_num"] = round(samtools_read_num(
                 f"{self.a['folder_stem']}consensus_data/{org_name}/collated_reads.bam", f'-F 0x904 -q {self.a["ConsensusMapQ"]}') / 2)
-            return coverage_filter
+
+            ##### TEST -- bact aggregates ####
+            agg_names = self.probe_names[self.probe_names["target_id"].isin(
+                coverage_filter)]
+            ########
+
+            return coverage_filter, agg_names
 
     def filter_tar_consensuses(self, org_name, filter) -> None:
         '''Purge target consensus from master list if coverage was lower than threshold (aln is consequently remade)'''
@@ -385,6 +451,7 @@ class Consensus:
 
     def clean_incomplete_consensus(self) -> None:
         '''If we had insufficient coverage for organism x, clean it from self vars and folder tree'''
+        self.subconsensuses.clear()
         for org_name in self.insufficient_coverage_orgs:
             del self.target_consensuses[org_name]
             shell(f"rm -r {self.a['folder_stem']}/consensus_data/{org_name}/")
@@ -481,7 +548,6 @@ class Consensus:
         '''Consensus for each thing target group'''
         [self.collate_consensus_seqs(tar_name)
             for tar_name in self.subconsensuses.keys() if "BACT" not in tar_name]
-        self.subconsensuses.clear()
         [self.call_flat_consensus(
             i) for i in self.target_consensuses.keys() if i != "Unmatched"]
 
