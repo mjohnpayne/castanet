@@ -285,6 +285,8 @@ class Consensus:
 
     def dumb_consensus_AGGREGATE(self, alnfpath, org_name) -> list:
         '''Produce an un-referenced/`flat` consensus sequence for file of target and target ref seqs'''
+        # TODO < Disgusting, harmonise with regular dumb_consensus.
+        # (15/04/26) Bodged like this as concat alignments are necessarily sparse. Unclear whether to concat smaller subalignments or keep as-is.
         from Bio.Align.AlignInfo import SummaryInfo
         aln = AlignIO.read(
             f"{alnfpath}{org_name}_consensus_alignment.aln", 'fasta')
