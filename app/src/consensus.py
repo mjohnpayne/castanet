@@ -369,7 +369,7 @@ class Consensus:
         cons["con"] = cons["con"].astype(str)
         cons.to_csv(in_fname)
         # RM < TODO Add in deduplicated depth :S
-        fasta_header = f">{self.a['ExpName']}_{in_fname.split('/')[-1].split('_')[0]}_consensus_MinDepth{self.a['ConsensusMinD']}"
+        fasta_header = f"{self.a['ExpName']}_{in_fname.split('/')[-1].split('_')[0]}_consensus_MinDepth{self.a['ConsensusMinD']}"
         save_fa(
             out_fname, f">{fasta_header}\n{''.join(cons['con'].tolist())}")
         save_fa(
