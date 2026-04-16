@@ -2,6 +2,7 @@ import os
 import shutil
 
 from test.utils import get_random_str, make_rand_dir, get_default_args
+from app.utils.utility_fns import read_fa
 from app.src.consensus import Consensus
 from app.src.analysis import Analysis
 from app.src.generate_counts import run_counts
@@ -22,28 +23,40 @@ def init_analysis(p, start_with_bam=False):
     clf.main()
 
 
-def init_consensus():
+def init_consensus(infile=None):
     '''Init start files'''
     p = get_default_args()
+    bamstart = False
     fstem = f"{p['SaveDir']}/{p['ExpName']}/"
+    if infile:
+        p["RefStem"] = infile
+        p["ExpDir"] = "./data/eval/"
+        p["MappingRefTable"] = infile.replace(".fasta", ".csv")
+        bamstart = True
     if os.path.exists(fstem):
         shutil.rmtree(fstem)
     os.mkdir(fstem)
-
     p = MappingRefConverter(p, sneaky_mode=True).main()
-    init_map(p)
+    if not infile:
+        init_map(p)
     run_counts(p)
     init_analysis(p)
 
-    clf = Consensus(p, start_with_bam=False)
+    clf = Consensus(p, start_with_bam=bamstart)
     clf.main()
-    assert os.stat(f"{p['folder_stem']}/consensus_seq_stats.csv").st_size > 2
+    if infile:
+        '''Check aggregation on bacterial targets'''
+        cons = read_fa(
+            f"{p['folder_stem']}/consensus_sequences/streptococcus-pneumoniae_remapped_consensus_sequence.fasta")
+        assert len(cons[0][1]) > 1500
+    else:
+        '''Else check a consensus was made of any length'''
+        assert os.stat(
+            f"{p['folder_stem']}/consensus_seq_stats.csv").st_size > 2
 
     shutil.rmtree(fstem)
 
-# Test with bam entry
-# Test with pl entry
-# Test without probe aggregation file
 
-
-init_consensus()
+if __name__ == "__main__":
+    for i in ["./data/eval/agg_refs.fasta", None]:
+        init_consensus(infile=i)

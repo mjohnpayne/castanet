@@ -1,4 +1,6 @@
 import os
+import sys
+import re
 import random
 import pandas as pd
 from app.utils.utility_fns import read_fa
@@ -19,6 +21,7 @@ class MappingRefConverter:
         self.sneaky_mode = sneaky_mode
 
     def make_csv(self) -> pd.DataFrame:
+        fixed_fasta = False
         if not self.in_file.endswith((".fa", ".fasta", ".fna")):
             stoperr(
                 f"Input mapping reference file {self.in_file} is not a fasta file.")
@@ -27,8 +30,46 @@ class MappingRefConverter:
         except Exception as e:
             raise ValueError(
                 f"Error reading fasta file {self.in_file}. Please ensure it is in valid fasta format.") from e
-        agg_headers, descriptions, seqs, organisms = [], [], [], []
+
         for fasta in fastas:
+            '''Check for leading ">"'''
+            if not fasta[0].startswith(">"):
+                if self.payload["FixFasta"]:
+                    logerr(
+                        f"Fasta entry {fasta[0]} does not have a header starting with '>'. I'm adding a header of '>{fasta[0].split()[0]}', which will be saved to your new fasta file.")
+                    fasta[0] = f">{fasta[0]}"
+                    fixed_fasta = True
+                else:
+                    stoperr(
+                        f"Fasta entry {fasta[0]} does not have a header starting with '>'. Please check your file is a valid FASTA, or run with FixFasta=True to automatically replace invalid characters with 'n' and add missing '>' to headers.")
+            '''Check for invalid characters in sequence'''
+            tmp = set([i for i in fasta[1].lower().replace("a", "").replace(
+                "t", "").replace("c", "").replace("g", "").replace("n", "")])
+            if len(tmp) > 0:
+                if self.payload["FixFasta"]:
+                    logerr(
+                        f"Fasta entry {fasta[0]} has non-ATCGN character/s in its sequence: {tmp}. I'm replacing these with 'n', which will be saved to your new fasta file.")
+                    fasta[1] = re.sub(r'[^ATCGNatcgn]', 'n', fasta[1])
+                    fixed_fasta = True
+                else:
+                    stoperr(
+                        f"Fasta entry {fasta[0]} has non-ATCGN character/s in its sequence: {tmp}. Please check your file is a valid FASTA, or run with FixFasta=True to automatically replace invalid characters with 'n' and add missing '>' to headers.")
+
+        if fixed_fasta:
+            saved_file = self.in_file.split(".")[0] + "_fixed.fa"
+            with open(saved_file, "w") as f:
+                [f.write(f"{i[0]}\n{i[1]}\n") for i in fastas]
+            loginfo(
+                f"Some formatting issues were found in your input fasta file {self.in_file} and have been automatically fixed. The converted mapping reference has been saved to {saved_file}. Please check this file to ensure the formatting is correct, then rerun this function with the edited fasta file if you are happy to proceed.")
+            return pd.DataFrame(), True
+
+        agg_headers, descriptions, seqs, organisms, rmlst = [], [], [], [], []
+        for fasta in fastas:
+            if "bact0" in fasta[0].lower():  # Aggregaton to key with "bact0"
+                match = re.findall(r"bact[0-9]*", fasta[0].lower())
+                rmlst.append(match[0])
+            else:
+                rmlst.append("")
             if len(fasta[0].split("_")) < 2:
                 logerr(f"Mapping reference {fasta[0]} has no underscores, so will not aggregate with any other references! Please refer to documentation. "
                        f"I'm setting this to '{self.default_aggregation_val}'.")
@@ -46,8 +87,9 @@ class MappingRefConverter:
                 stoperr(
                     f"Fasta entry {fasta[0]} has no sequence associated with it. Please check your file is a valid FASTA.")
         df = pd.DataFrame({"organism": organisms, "probetype": agg_headers,
-                           "description": descriptions, "sequence": seqs})
-        return df
+                           "description": descriptions, "sequence": seqs, "rmlst": rmlst})
+
+        return df, False
 
     def input_checks(self, df) -> pd.DataFrame:
         '''Scans header organism and probetype values for disallowed characters. Stop if found and report to user.'''
@@ -55,7 +97,6 @@ class MappingRefConverter:
         ).tolist() + df["probetype"].unique().tolist()
         disallowed_chars = [" ", "/", "\\", ":", "@", "(", ")", "]", "[", ";", "#", "$", "%", "^", "&",
                             "*", "?", "\"", "<", ">", ","]
-
         errors = []
         for header in aggregation_headers:
             for char in disallowed_chars:
@@ -83,7 +124,7 @@ class MappingRefConverter:
     def save_output(self, df, fasta) -> None:
         if not self.sneaky_mode:
             '''Save CSV'''
-            df[["organism", "probetype", "description", "key"]].to_csv(
+            df[["organism", "probetype", "description", "key", "rmlst"]].to_csv(
                 f"{self.out_file}", index=False)
         else:
             if not os.path.exists(f"{self.payload['SaveDir']}/{self.payload['ExpName']}/"):
@@ -91,17 +132,20 @@ class MappingRefConverter:
                     f"{self.payload['SaveDir']}/{self.payload['ExpName']}/")
             self.payload["MappingRefTable"] = f"{self.payload['SaveDir']}/{self.payload['ExpName']}/MappingRefTable.csv"
             df = df.applymap(lambda s: s.lower() if type(s) == str else s)
-            df[["organism", "probetype", "description", "key"]].to_csv(
+            df[["organism", "probetype", "description", "key", "rmlst"]].to_csv(
                 self.payload["MappingRefTable"], index=False)
             with open(self.out_file, "w") as f:
                 for header, seq in fasta:
                     f.write(f"{header}\n{seq}\n")
 
     def validate_user_csv(self, df):
-        if df.isnull().values.any():
-            stoperr(f"Your input MappingRefTable has empty values in the probetype and/or description columns. "
-                    f"Castanet can't proceed as it needs names for each target we map to. "
-                    f"Please manually edit these, or re-generate the mapping reference with the /convert_mapping_ref/ function.")
+        try:
+            if df[["organism", "probetype", "key"]].isnull().values.any():
+                stoperr(f"Your input MappingRefTable has empty values in the probetype and/or description columns. "
+                        f"Castanet can't proceed as it needs names for each target we map to. "
+                        f"Please manually edit these, or re-generate the mapping reference with the /convert_mapping_ref/ function.")
+        except:
+            stoperr(f"Castanet couldn't read your mapping reference table. Please ensure it is a CSV file with columns 'organism', 'probetype', and 'key'.")
 
     def join_seqs_to_df(self, df, users_df):
         out_df = users_df.copy()
@@ -110,7 +154,10 @@ class MappingRefConverter:
 
     def main(self):
         '''Convert an input CSV or FASTA mapping reference description file to a Castanet-compatible RefStem'''
-        df = self.make_csv()
+        df, res = self.make_csv()
+        if res:
+            return "Please restart following correction of input fasta file as described in the log message above."
+
         if not self.sneaky_mode:
             loginfo(f"Converting mapping reference file: {self.in_file}")
             df = self.input_checks(df)
