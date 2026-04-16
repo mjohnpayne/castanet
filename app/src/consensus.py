@@ -203,7 +203,9 @@ class Consensus:
             # 3 make alignment of concat refseq with
             out = shell(f"mafft --thread {self.a['NThreads']} --auto --addfragments {flat_cons_seqs} {ref_aln_fnme}"
                         f"> {self.a['folder_stem']}consensus_data/{org_name}/{org_name}_consensus_alignment.aln", is_test=True)
-            # TODO < TEST OUTPUT
+            error_handler_cli(
+                out, f"{self.a['folder_stem']}consensus_data/{org_name}/{org_name}_consensus_alignment.aln", "mafft", test_f_size=True)
+            # breakpoint()
 
             # 4 get flat consensus as per usual pathway
             flat_consensus = self.dumb_consensus_AGGREGATE(
@@ -299,7 +301,7 @@ class Consensus:
                 return ('', np.nan)
 
             try:
-                just_measured_bases = s[-int(len(s)):].lower().replace("-", "").replace("n", "")
+                just_measured_bases = s[-int(len(s))                                        :].lower().replace("-", "").replace("n", "")
                 consbase, consnum = Counter(
                     just_measured_bases).most_common()[0]
 
