@@ -1,4 +1,5 @@
 import os
+import sys
 import re
 import random
 import pandas as pd
@@ -20,6 +21,7 @@ class MappingRefConverter:
         self.sneaky_mode = sneaky_mode
 
     def make_csv(self) -> pd.DataFrame:
+        fixed_fasta = False
         if not self.in_file.endswith((".fa", ".fasta", ".fna")):
             stoperr(
                 f"Input mapping reference file {self.in_file} is not a fasta file.")
@@ -30,14 +32,36 @@ class MappingRefConverter:
                 f"Error reading fasta file {self.in_file}. Please ensure it is in valid fasta format.") from e
 
         for fasta in fastas:
+            '''Check for leading ">"'''
             if not fasta[0].startswith(">"):
-                stoperr(
-                    f"Fasta entry {fasta[0]} does not have a header starting with '>'. Please check your file is a valid FASTA.")
-            tmp = fasta[1].lower().replace("a", "").replace(
-                "t", "").replace("c", "").replace("g", "").replace("n", "")
+                if self.payload["FixFasta"]:
+                    logerr(
+                        f"Fasta entry {fasta[0]} does not have a header starting with '>'. I'm adding a header of '>{fasta[0].split()[0]}', which will be saved to your new fasta file.")
+                    fasta[0] = f">{fasta[0]}"
+                    fixed_fasta = True
+                else:
+                    stoperr(
+                        f"Fasta entry {fasta[0]} does not have a header starting with '>'. Please check your file is a valid FASTA, or run with FixFasta=True to automatically replace invalid characters with 'n' and add missing '>' to headers.")
+            '''Check for invalid characters in sequence'''
+            tmp = set([i for i in fasta[1].lower().replace("a", "").replace(
+                "t", "").replace("c", "").replace("g", "").replace("n", "")])
             if len(tmp) > 0:
-                stoperr(
-                    f"Fasta entry {fasta[0]} has non-ATCGN characters in its sequence. Please check your file is a valid FASTA.")
+                if self.payload["FixFasta"]:
+                    logerr(
+                        f"Fasta entry {fasta[0]} has non-ATCGN character/s in its sequence: {tmp}. I'm replacing these with 'n', which will be saved to your new fasta file.")
+                    fasta[1] = re.sub(r'[^ATCGNatcgn]', 'n', fasta[1])
+                    fixed_fasta = True
+                else:
+                    stoperr(
+                        f"Fasta entry {fasta[0]} has non-ATCGN character/s in its sequence: {tmp}. Please check your file is a valid FASTA, or run with FixFasta=True to automatically replace invalid characters with 'n' and add missing '>' to headers.")
+
+        if fixed_fasta:
+            saved_file = self.in_file.split(".")[0] + "_fixed.fa"
+            with open(saved_file, "w") as f:
+                [f.write(f"{i[0]}\n{i[1]}\n") for i in fastas]
+            loginfo(
+                f"Some formatting issues were found in your input fasta file {self.in_file} and have been automatically fixed. The converted mapping reference has been saved to {saved_file}. Please check this file to ensure the formatting is correct, then rerun this function with the edited fasta file if you are happy to proceed.")
+            return pd.DataFrame(), True
 
         agg_headers, descriptions, seqs, organisms, rmlst = [], [], [], [], []
         for fasta in fastas:
@@ -65,7 +89,7 @@ class MappingRefConverter:
         df = pd.DataFrame({"organism": organisms, "probetype": agg_headers,
                            "description": descriptions, "sequence": seqs, "rmlst": rmlst})
 
-        return df
+        return df, False
 
     def input_checks(self, df) -> pd.DataFrame:
         '''Scans header organism and probetype values for disallowed characters. Stop if found and report to user.'''
@@ -73,7 +97,6 @@ class MappingRefConverter:
         ).tolist() + df["probetype"].unique().tolist()
         disallowed_chars = [" ", "/", "\\", ":", "@", "(", ")", "]", "[", ";", "#", "$", "%", "^", "&",
                             "*", "?", "\"", "<", ">", ","]
-
         errors = []
         for header in aggregation_headers:
             for char in disallowed_chars:
@@ -128,7 +151,10 @@ class MappingRefConverter:
 
     def main(self):
         '''Convert an input CSV or FASTA mapping reference description file to a Castanet-compatible RefStem'''
-        df = self.make_csv()
+        df, res = self.make_csv()
+        if res:
+            return "Please restart following correction of input fasta file as described in the log message above."
+
         if not self.sneaky_mode:
             loginfo(f"Converting mapping reference file: {self.in_file}")
             df = self.input_checks(df)

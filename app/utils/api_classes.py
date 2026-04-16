@@ -79,15 +79,6 @@ class Data_TrimmomaticParams(BaseModel):
                             description="Values < than min trim length will be removed by Trimmomatic tool. Only used if DoTrimming = true")
 
 
-# class Data_AnalysisExtras(BaseModel): % TODO < DEPRECATED AS OF 9.3
-#     Clin: Optional[str] = Query("",
-#                                 description='(OPTIONAL) Path to CSV file containing clinical data (must have at least following fields: pt, clin_int; the field "sampleid" if present will be ignored). Other fields will be ignored.')
-#     DepthInf: str = Query("",
-#                           description='(OPTIONAL, For regenerating full CSV with new clinical info): Path to previously generated CSV file of read depth per position for each probe, for all samples in this batch. Must contain the following fields: sampleid, target_id, depth_mean, depth_std, depth_25pc, depth_median, depth_75pc, prop_target_covered, prop_target_covered_mindepth2, prop_target_covered_mindepth5, prop_target_covered_mindepth10, udepth_mean, udepth_std, udepth_25pc, udepth_median, udepth_75pc, uprop_target_covered, uprop_target_covered_mindepth2, uprop_target_covered_mindepth5, uprop_target_covered_mindepth10')
-#     SamplesFile: Optional[str] = Query("",
-#                                        description="(OPTIONAL) If specified, read raw read numbers from this CSV (needs cols 'sampleid', 'pt', 'rawreadnum'). If not specified, CASTANET will read the raw read numbers from the input bam file, i.e. it will assume you haven't pre-filtered the file.")
-
-
 class Data_MappingParameters(BaseModel):
     Mapper: Literal["bwa", "bowtie2", "minimap2"] = Query("bwa",
                                                           description="Choose mapping software, options are 'bwa' for BWA-Mem2, 'bowtie2' or 'minimap2'. Default is 'bwa'.")
@@ -140,6 +131,8 @@ class Convert_mapping_ref_data(BaseModel):
                         description="Path to input CSV or FASTA mapping reference description file to be converted to a Castanet-compatible RefStem.")
     OutFile: str = Query("./my_mapping_ref_table.csv",
                          description="Output file name for converted mapping reference, in CSV format.")
+    FixFasta: bool = Query(False,
+                           description="If true, automatically fix common FASTA formatting issues in the input file, such as missing '>' at the start of headers and invalid characters in sequences. If false, Castanet will raise an error if it encounters these issues, and you will need to manually fix your input file")
 
 
 '''Endpoint objects'''

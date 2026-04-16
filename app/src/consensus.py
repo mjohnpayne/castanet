@@ -503,7 +503,7 @@ class Consensus:
                 df.to_csv(dfpath)
             except FileNotFoundError:
                 logerr(f"Couldn't find supplementary stats for {org}, skipping addition of remapped read count to summary csv."
-                       f"This can happen if individual pipeline stages are run out-of-synch with each other.")
+                       f"This can happen if individual pipeline stages are run out-of-synch with each other, or if you're generating a consensus with horizontal (rMLST) aggregation.")
 
             if self.a["DebugMode"]:
                 '''Plot consensus coverage'''
