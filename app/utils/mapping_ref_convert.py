@@ -28,9 +28,20 @@ class MappingRefConverter:
         except Exception as e:
             raise ValueError(
                 f"Error reading fasta file {self.in_file}. Please ensure it is in valid fasta format.") from e
+
+        for fasta in fastas:
+            if not fasta[0].startswith(">"):
+                stoperr(
+                    f"Fasta entry {fasta[0]} does not have a header starting with '>'. Please check your file is a valid FASTA.")
+            tmp = fasta[1].lower().replace("a", "").replace(
+                "t", "").replace("c", "").replace("g", "").replace("n", "")
+            if len(tmp) > 0:
+                stoperr(
+                    f"Fasta entry {fasta[0]} has non-ATCGN characters in its sequence. Please check your file is a valid FASTA.")
+
         agg_headers, descriptions, seqs, organisms, rmlst = [], [], [], [], []
         for fasta in fastas:
-            if "bact0" in fasta[0].lower():
+            if "bact0" in fasta[0].lower():  # Aggregaton to key with "bact0"
                 match = re.findall(r"bact[0-9]*", fasta[0].lower())
                 rmlst.append(match[0])
             else:

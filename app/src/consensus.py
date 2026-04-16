@@ -205,7 +205,6 @@ class Consensus:
                         f"> {self.a['folder_stem']}consensus_data/{org_name}/{org_name}_consensus_alignment.aln", is_test=True)
             error_handler_cli(
                 out, f"{self.a['folder_stem']}consensus_data/{org_name}/{org_name}_consensus_alignment.aln", "mafft", test_f_size=True)
-            # breakpoint()
 
             # 4 get flat consensus as per usual pathway
             flat_consensus = self.dumb_consensus_AGGREGATE(
