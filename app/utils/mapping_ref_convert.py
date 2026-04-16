@@ -139,10 +139,13 @@ class MappingRefConverter:
                     f.write(f"{header}\n{seq}\n")
 
     def validate_user_csv(self, df):
-        if df[["organism", "probetype", "key"]].isnull().values.any():
-            stoperr(f"Your input MappingRefTable has empty values in the probetype and/or description columns. "
-                    f"Castanet can't proceed as it needs names for each target we map to. "
-                    f"Please manually edit these, or re-generate the mapping reference with the /convert_mapping_ref/ function.")
+        try:
+            if df[["organism", "probetype", "key"]].isnull().values.any():
+                stoperr(f"Your input MappingRefTable has empty values in the probetype and/or description columns. "
+                        f"Castanet can't proceed as it needs names for each target we map to. "
+                        f"Please manually edit these, or re-generate the mapping reference with the /convert_mapping_ref/ function.")
+        except:
+            stoperr(f"Castanet couldn't read your mapping reference table. Please ensure it is a CSV file with columns 'organism', 'probetype', and 'key'.")
 
     def join_seqs_to_df(self, df, users_df):
         out_df = users_df.copy()
