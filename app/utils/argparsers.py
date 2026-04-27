@@ -65,8 +65,10 @@ def parse_arguments_lite():
                         default=False, type=str)
     parser.add_argument('-MappingRefTable', required=False,
                         default=False, type=str)
+    parser.add_argument('-FixFasta', required=False, default=True, type=str,
+                        help="If True,  replace invalid characters with 'n' and add missing '>' to headers.")
     bool_fields = ["Batch", "BAM", "DoKrakenPrefilter",
-                   "DoTrimming", "DoConsensus"]
+                   "DoTrimming", "DoConsensus", "PostFilt", "SingleEndedReads","FixFasta"]
     return parser, bool_fields
 
 
