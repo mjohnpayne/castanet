@@ -100,7 +100,7 @@ class Analysis:
 
         '''Append and apply horizontal aggregation keys (i.e. rmlst)'''
         pdf['probetype'] = pdf.genename.str.lower()
-        pdf["genename"] = pdf.apply(lambda x: x["rmlst"] if pd.notna(x["rmlst"]) else x["organism"], axis=1)
+        pdf["genename"] = pdf.apply(lambda x: x["organism"] + "-" + x["rmlst"] if pd.notna(x["rmlst"]) else x["organism"], axis=1)
         pdf["AGGREGATE"] = pdf.apply(lambda x: f'{x["organism"]}' if str(
             x["rmlst"]).startswith("rmlst") else x["target_id"].split("_")[0], axis=1)
 
