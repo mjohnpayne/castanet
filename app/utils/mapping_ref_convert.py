@@ -118,7 +118,7 @@ class MappingRefConverter:
                     "_".join(fasta[0].split("_")[1:]).replace(",", ""))
                 organisms.append("rmlst-"+s)
 
-            elif "segment" in fasta[0].lower():
+            elif "-segment" in fasta[0].lower():
                 org = fasta[0].lower().split("-segment")[0][1:]
                 seg = fasta[0].lower().split("-segment")[-1].split("_")[0]
                 rmlstname = "segment-"+seg
@@ -128,6 +128,8 @@ class MappingRefConverter:
                 descriptions.append(
                     "_".join(fasta[0].split("_")[1:]).replace(",", ""))
             else:
+                if "segment" in fasta[0].lower() and "-segment" not in fasta[0].lower():
+                    loginfo("If you would like segments of a virus to be aggregated please format target file fasta header as virusA-segmentB")
                 rmlst.append("")
                 if len(fasta[0].split("_")) < 2:
                     logerr(f"Mapping reference {fasta[0]} has no underscores, so will not aggregate with any other references! Please refer to documentation. "
